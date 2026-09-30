@@ -13,7 +13,7 @@ import (
 	"github.com/0then0/stalefill/internal/resp"
 )
 
-const Version = "0.1.0"
+const Version = "0.2.0"
 const (
 	Pass                = "PASS"
 	Fail                = "FAIL"
@@ -29,6 +29,7 @@ type Report struct {
 	Version     string            `json:"tool_version"`
 	Scenario    string            `json:"scenario"`
 	Outcome     string            `json:"outcome"`
+	FillMode    string            `json:"fill_mode,omitempty"`
 	KeyHash     string            `json:"key_sha256,omitempty"`
 	Events      []Event           `json:"events"`
 	Findings    []Finding         `json:"findings"`
@@ -83,6 +84,7 @@ func Run(parent context.Context, c Config, doctor bool) (report Report) {
 	defer func() {
 		report.Events, _, _ = s.Snapshot()
 		report.KeyHash = s.KeyHash()
+		report.FillMode = s.FillMode()
 		report.DurationMS = time.Since(started).Milliseconds()
 	}()
 	ctx, cancel := context.WithTimeout(parent, duration(c))
@@ -154,7 +156,7 @@ func Run(parent context.Context, c Config, doctor bool) (report Report) {
 		} else if (result.err != nil || result.statusMismatch) && ctx.Err() == nil {
 			classifyProbe(&report, s)
 		} else {
-			report.Set(Unresolved, "SF005")
+			classifySchedule(parent, &report, s, "SF005")
 		}
 		return
 	case e = <-heldDone:
@@ -165,7 +167,7 @@ func Run(parent context.Context, c Config, doctor bool) (report Report) {
 		}
 	}
 	s.Event("write_started")
-	w := probe(ctx, c.Write)
+	w := scheduleProbe(ctx, s, c.Write)
 	if w.err != nil || w.statusMismatch || w.mismatch {
 		s.Event("write_probe_failed")
 		classifyProbe(&report, s)
@@ -268,4 +270,21 @@ func (s *Scheduler) ReleaseOnCleanup() {
 		s.released = true
 		close(s.release)
 	}
+}
+
+// Wake HTTP waits when a pipelined invalidation is trapped behind the held
+// publication on the same connection. Otherwise the probe masks SF006 until
+// the invocation timeout even though the unsupported schedule is known.
+func scheduleProbe(ctx context.Context, s *Scheduler, p Probe) probeResult {
+	probeCtx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		s.wait(probeCtx, func() bool { return false })
+		cancel()
+	}()
+	result := probe(probeCtx, p)
+	cancel()
+	<-done
+	return result
 }

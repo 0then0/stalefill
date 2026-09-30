@@ -5,16 +5,21 @@ on:
 permissions:
   contents: write
 jobs:
+  client-compat:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/client-compat.yml
   release:
+    needs: client-compat
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       redis:
-        image: redis:7-alpine
+        image: redis:8.10.2-alpine
         ports: ['6379:6379']
         options: --health-cmd "redis-cli ping" --health-interval 2s --health-timeout 2s --health-retries 20
       valkey:
-        image: valkey/valkey:8-alpine
+        image: valkey/valkey:9.1.2-alpine
         ports: ['6381:6379']
         options: --health-cmd "valkey-cli ping" --health-interval 2s --health-timeout 2s --health-retries 20
     steps:
@@ -29,11 +34,13 @@ jobs:
       - run: go test -race ./...
         env:
           REDIS_TEST_ADDR: 127.0.0.1:6379
-      - run: go test -race ./internal/scenario -run TestRealRedisDemos -count=1
+      - run: go test -race ./... -count=1
         env:
           REDIS_TEST_ADDR: 127.0.0.1:6381
       - name: Build archives and checksums
         run: scripts/release.sh "$GITHUB_REF_NAME"
+      - name: Check packaged documentation and checksums
+        run: python3 scripts/verify_release.py dist
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}

@@ -19,7 +19,7 @@ func (r *fragmentReader) Read(p []byte) (int, error) {
 	return 1, nil
 }
 func TestFrames(t *testing.T) {
-	frames := []string{string(Encode("SET", "product:42", "a\x00b\r\nc")), "$-1\r\n", "*2\r\n+OK\r\n:2\r\n", "%1\r\n+proto\r\n:3\r\n", "_\r\n", "#t\r\n", "!3\r\nERR\r\n", "=5\r\ntxt:a\r\n", "~2\r\n:1\r\n:2\r\n"}
+	frames := []string{string(Encode("SET", "product:42", "a\x00b\r\nc")), "$-1\r\n", "*2\r\n+OK\r\n:2\r\n", "%1\r\n+proto\r\n:3\r\n", "_\r\n", "#t\r\n", "!3\r\nERR\r\n", "=5\r\ntxt:a\r\n", "~2\r\n:1\r\n:2\r\n", "*0\r\n", "%0\r\n", "+OK\r\n", "+QUEUED\r\n", "*3\r\n:0\r\n:1\r\n:1\r\n", "*-1\r\n"}
 	r := bufio.NewReader(&fragmentReader{b: []byte(strings.Join(frames, ""))})
 	for _, want := range frames {
 		f, e := Read(r)

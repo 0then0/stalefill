@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
-version=${1:-v0.1.0}
-if [ "$version" != "v0.1.0" ]; then
-  echo 'This release script targets the current CLI version v0.1.0' >&2
+version=${1:-v0.2.0}
+if [ "$version" != "v0.2.0" ]; then
+  echo 'This release script targets the current CLI version v0.2.0' >&2
   exit 1
 fi
 mkdir -p dist
@@ -19,8 +19,9 @@ for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; d
   if [ "$target_os" = windows ]; then binary=stalefill.exe; fi
   CGO_ENABLED=0 GOOS="$target_os" GOARCH="$target_arch" go build -trimpath -buildvcs=false -ldflags='-s -w' -o "$folder/$binary" ./cmd/stalefill
   cp LICENSE README.md go.mod CONTRIBUTING.md CHANGELOG.md "$folder/"
-  mkdir -p "$folder/docs/assets" "$folder/docs/traces" "$folder/examples"
+  mkdir -p "$folder/docs/assets" "$folder/docs/traces" "$folder/docs/releases" "$folder/examples"
   cp docs/*.md "$folder/docs/"
+  cp docs/releases/*.md "$folder/docs/releases/"
   cp docs/assets/stalefill.svg "$folder/docs/assets/"
   cp docs/traces/*.json "$folder/docs/traces/"
   cp examples/*.json "$folder/examples/"

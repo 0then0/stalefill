@@ -1,0 +1,8 @@
+{
+  "name": "stalefill-node-redis-fixture",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "redis": "6.3.0"
+  }
+}

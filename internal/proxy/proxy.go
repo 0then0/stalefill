@@ -17,10 +17,12 @@ import (
 )
 
 type Command struct {
-	Connection uint64
-	Name       string
-	Args       [][]byte
-	Frame      resp.Frame
+	Connection    uint64
+	Name          string
+	Args          [][]byte
+	Frame         resp.Frame
+	InTransaction bool
+	Transaction   *Transaction
 }
 type Hooks interface {
 	Queued(Command)
@@ -127,6 +129,7 @@ func (s *Server) serve(client net.Conn) {
 		defer close(readerDone)
 		defer close(queue)
 		r := bufio.NewReader(client)
+		var tracker transactionTracker
 		for {
 			f, err := resp.Read(r)
 			if err != nil {
@@ -146,6 +149,7 @@ func (s *Server) serve(client net.Conn) {
 				return
 			}
 			c := Command{Name: name, Args: args, Frame: f, Connection: id}
+			tracker.annotate(&c)
 			s.hooks.Queued(c)
 			select {
 			case queue <- c:
@@ -156,6 +160,7 @@ func (s *Server) serve(client net.Conn) {
 	}()
 	defer func() { cancel(); client.Close(); <-readerDone }()
 	r := bufio.NewReader(up)
+	var state transactionReplies
 	for {
 		var c Command
 		select {
@@ -174,6 +179,7 @@ func (s *Server) serve(client net.Conn) {
 			}
 			continue
 		}
+		state.before(&c)
 		if e = s.hooks.Before(ctx, c); e != nil {
 			return
 		}
@@ -205,6 +211,7 @@ func (s *Server) serve(client net.Conn) {
 			s.hooks.Error("unsupported unsolicited RESP3 push")
 			return
 		}
+		state.after(c, f)
 		s.hooks.After(c, f)
 		if _, e = client.Write(f.Raw); e != nil {
 			return

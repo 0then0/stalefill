@@ -1,0 +1,51 @@
+name: Real client compatibility
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  clients:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        server:
+          - { image: 'redis:8.10.2-alpine', cli: redis-cli, version: 'Redis-8.10.2' }
+          - { image: 'valkey/valkey:9.1.2-alpine', cli: valkey-cli, version: 'Valkey-9.1.2' }
+    services:
+      cache:
+        image: ${{ matrix.server.image }}
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "${{ matrix.server.cli }} ping"
+          --health-interval 2s --health-timeout 2s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - run: go build -o bin/stalefill ./cmd/stalefill
+      - run: go vet ./... && go build -o ../../bin/go-redis-fixture .
+        working-directory: integration/go-redis
+      - run: python -m venv integration/redis-py/.venv && integration/redis-py/.venv/bin/pip install -r integration/redis-py/requirements.txt
+      - run: npm ci --ignore-scripts
+        working-directory: integration/node-redis
+      - name: Python fixture error handling
+        run: integration/redis-py/.venv/bin/python -m unittest discover -s integration -p 'test_*.py'
+      - name: Transactional hash fills, all clients, both RESP modes, 24 repetitions
+        run: >-
+          python integration/validate.py --upstream 127.0.0.1:6379
+          --server '${{ matrix.server.version }}' --python integration/redis-py/.venv/bin/python
+      - name: Standalone HSET and EXPIRE, both RESP modes, 24 repetitions
+        run: >-
+          python integration/validate.py --upstream 127.0.0.1:6379
+          --server '${{ matrix.server.version }}' --python integration/redis-py/.venv/bin/python
+          --clients redis-py --fill single

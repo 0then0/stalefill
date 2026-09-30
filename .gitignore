@@ -39,3 +39,8 @@ go.work.sum
 /stalefill-repro.json
 /broken.json
 /fixed.json
+
+# Real-client fixture dependencies
+/integration/**/node_modules/
+/integration/**/.venv/
+__pycache__/

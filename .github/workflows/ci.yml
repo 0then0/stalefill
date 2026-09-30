@@ -5,6 +5,8 @@ on:
 permissions:
   contents: read
 jobs:
+  client-compat:
+    uses: ./.github/workflows/client-compat.yml
   test:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -13,8 +15,8 @@ jobs:
       matrix:
         go: ['1.26.x', '1.27.x']
         server:
-          - { image: 'redis:7-alpine', cli: redis-cli }
-          - { image: 'valkey/valkey:8-alpine', cli: valkey-cli }
+          - { image: 'redis:8.10.2-alpine', cli: redis-cli }
+          - { image: 'valkey/valkey:9.1.2-alpine', cli: valkey-cli }
     services:
       cache:
         image: ${{ matrix.server.image }}

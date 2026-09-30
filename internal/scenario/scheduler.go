@@ -54,6 +54,7 @@ type Scheduler struct {
 	release                                           chan struct{}
 	armed, miss, held, invalidated, released, applied bool
 	sets                                              int
+	fillMode                                          string
 	seenRead, seenFill, seenInvalidation              bool
 	problem, infra                                    string
 }
@@ -113,34 +114,6 @@ func (s *Scheduler) Event(name string) {
 func (s *Scheduler) match(key []byte) bool {
 	return s.key != "" && string(key) == s.key || s.regex != nil && s.regex.Match(key)
 }
-func (s *Scheduler) keys(c proxy.Command) [][]byte {
-	switch c.Name {
-	case "GET", "SET", "SETEX", "PSETEX", "EXPIRE", "PEXPIRE":
-		if len(c.Args) > 0 {
-			return c.Args[:1]
-		}
-	case "MGET", "DEL", "UNLINK":
-		return c.Args
-	}
-	return nil
-}
-func (s *Scheduler) target(c proxy.Command) bool {
-	for _, k := range s.keys(c) {
-		if s.match(k) {
-			return true
-		}
-	}
-	return false
-}
-func isFill(name string) bool   { return name == "SET" || name == "SETEX" || name == "PSETEX" }
-func isDelete(name string) bool { return name == "DEL" || name == "UNLINK" }
-func opaque(name string) bool {
-	switch name {
-	case "MULTI", "EXEC", "EVAL", "EVALSHA", "EVAL_RO", "EVALSHA_RO", "FCALL", "FCALL_RO":
-		return true
-	}
-	return false
-}
 func (s *Scheduler) issueLocked(id string) {
 	if s.problem == "" {
 		s.problem = id
@@ -151,15 +124,36 @@ func (s *Scheduler) issueLocked(id string) {
 func (s *Scheduler) Queued(c proxy.Command) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if opaque(c.Name) {
+	if isLua(c.Name) {
+		_, valid := luaKeys(c)
+		if !valid || s.target(c) {
+			s.issueLocked("SF006")
+		}
+		return
+	}
+	if c.Name == "FCALL" || c.Name == "FCALL_RO" || c.Name == "FLUSHALL" || c.Name == "FLUSHDB" || c.Name == "SWAPDB" {
 		s.issueLocked("SF006")
 		return
 	}
-	if !s.armed || !s.target(c) {
+	pub, unsupported := s.publication(c)
+	if !c.InTransaction && s.target(c) && !isRead(c.Name) && !isFill(c.Name) && !isDelete(c.Name) {
+		switch c.Name {
+		case "EXPIRE", "PEXPIRE", "TTL", "PTTL", "EXISTS", "WATCH":
+		default:
+			s.issueLocked("SF006")
+		}
+	}
+	if unsupported && c.Name != "DISCARD" {
+		s.issueLocked("SF006")
+	}
+	if !s.armed {
 		return
 	}
-	// Freeze the regex-selected key to one concrete key for this schedule.
-	for _, k := range s.keys(c) {
+	keys := s.keys(c)
+	if pub.Mode != "" {
+		keys = [][]byte{pub.Key}
+	}
+	for _, k := range keys {
 		if s.match(k) {
 			if s.selected == "" {
 				s.selected = string(k)
@@ -168,10 +162,14 @@ func (s *Scheduler) Queued(c proxy.Command) {
 			}
 		}
 	}
-	if isDelete(c.Name) && s.sets > 0 && !s.released && c.Connection != 0 && c.Connection == s.fillConnection {
+	// Queued transaction members have no publication or invalidation effect.
+	if c.InTransaction && c.Name != "EXEC" {
+		return
+	}
+	if isDelete(c.Name) && s.target(c) && s.sets > 0 && !s.released && c.Connection != 0 && c.Connection == s.fillConnection {
 		s.issueLocked("SF006")
 	}
-	if isFill(c.Name) && !s.released {
+	if pub.Mode != "" && !s.released {
 		s.sets++
 		if s.sets == 1 {
 			s.fillConnection = c.Connection
@@ -183,9 +181,26 @@ func (s *Scheduler) Queued(c proxy.Command) {
 }
 func (s *Scheduler) Before(ctx context.Context, c proxy.Command) error {
 	s.mu.Lock()
-	if !s.armed || !s.target(c) || !isFill(c.Name) || s.released {
+	pub, unsupported := s.publication(c)
+	if unsupported && c.Name != "DISCARD" {
+		s.issueLocked("SF006")
+	}
+	// Non-atomic DEL/HSET publication has no supported group boundary.
+	if s.armed && s.miss && !s.held && !c.InTransaction && isDelete(c.Name) && s.target(c) {
+		s.issueLocked("SF006")
+	}
+	if !s.armed || pub.Mode == "" || s.released {
 		s.mu.Unlock()
 		return nil
+	}
+	if c.Name == "EXEC" && !c.Transaction.Accepted {
+		s.issueLocked("SF008")
+		s.mu.Unlock()
+		return nil
+	}
+	if s.problem != "" || s.infra != "" {
+		s.mu.Unlock()
+		return errors.New("unsupported publication")
 	}
 	if !s.miss {
 		s.issueLocked("SF005")
@@ -194,13 +209,23 @@ func (s *Scheduler) Before(ctx context.Context, c proxy.Command) error {
 	}
 	if !s.held {
 		s.held = true
+		s.fillMode = pub.Mode
+		s.fillConnection = c.Connection
 		s.phase = PhaseHeld
-		s.eventLocked("stale_set_held", c.Name)
+		if c.Name == "EXEC" {
+			s.eventLocked("fill_transaction_identified", "EXEC")
+			s.eventLocked("fill_exec_held", "EXEC")
+		} else {
+			s.eventLocked("stale_set_held", c.Name)
+		}
 	}
 	release := s.release
 	s.mu.Unlock()
 	select {
 	case <-release:
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -209,7 +234,30 @@ func (s *Scheduler) Before(ctx context.Context, c proxy.Command) error {
 func (s *Scheduler) After(c proxy.Command, f resp.Frame) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if !s.target(c) {
+	// Opaque Lua has already been classified using declared KEYS. NOSCRIPT
+	// on an unrelated lock is a normal client fallback, and target Lua stays
+	// unsupported even if its reply is an error.
+	if isLua(c.Name) {
+		return
+	}
+	// Redis's QUEUED response is not an applied mutation or a cache miss.
+	if c.InTransaction && c.Name != "EXEC" && c.Name != "DISCARD" {
+		return
+	}
+	pub, unsupported := s.publication(c)
+	if c.Name == "DISCARD" && unsupported {
+		s.issueLocked("SF008")
+		return
+	}
+	if unsupported {
+		s.issueLocked("SF006")
+		return
+	}
+	if pub.Mode == "" && !s.target(c) {
+		return
+	}
+	if c.Name == "EXEC" && pub.Mode != "" && !publicationSucceeded(c, f) {
+		s.issueLocked("SF008")
 		return
 	}
 	if f.IsError() {
@@ -217,34 +265,30 @@ func (s *Scheduler) After(c proxy.Command, f resp.Frame) {
 		s.eventLocked("redis_command_error", c.Name)
 		return
 	}
-	if c.Name == "GET" || c.Name == "MGET" {
+	if isRead(c.Name) {
 		s.seenRead = true
-		miss := c.Name == "GET" && f.Null
-		if c.Name == "MGET" && f.Kind == '*' {
-			for i, k := range c.Args {
-				if s.match(k) && i < len(f.Items) && f.Items[i].Null {
-					miss = true
-				}
-			}
-		}
-		if s.armed && miss && !s.miss {
+		if s.armed && s.readMiss(c, f) && !s.miss {
 			s.miss = true
 			s.phase = PhaseMiss
 			s.eventLocked("cache_miss_observed", c.Name)
 		}
 	}
-	if isFill(c.Name) {
+	if pub.Mode != "" {
 		s.seenFill = true
-		if s.armed && s.held && s.released && !s.applied {
+		if s.armed && s.held && s.released && !s.applied && c.Connection == s.fillConnection {
 			s.applied = true
 			s.phase = PhaseApplied
-			s.eventLocked("stale_set_completed", c.Name)
+			if c.Name == "EXEC" {
+				s.eventLocked("fill_exec_completed", c.Name)
+			} else {
+				s.eventLocked("stale_set_completed", c.Name)
+			}
 		}
 	}
 	if isDelete(c.Name) && f.Kind == ':' {
 		s.seenInvalidation = true
 		if s.armed && s.held && !s.invalidated {
-			if s.phase == PhaseHeld {
+			if s.phase == PhaseHeld || (c.Connection != 0 && c.Connection == s.fillConnection && !s.released) {
 				s.issueLocked("SF006")
 				return
 			}
@@ -285,7 +329,11 @@ func (s *Scheduler) Release() error {
 	if !s.released {
 		s.released = true
 		s.phase = PhaseReleased
-		s.eventLocked("stale_set_released", "")
+		if s.fillMode == "transactional_hash" {
+			s.eventLocked("fill_exec_released", "EXEC")
+		} else {
+			s.eventLocked("stale_set_released", "")
+		}
 		close(s.release)
 	}
 	return nil
@@ -339,3 +387,5 @@ func (s *Scheduler) KeyHash() string {
 	sum := sha256.Sum256([]byte(key))
 	return hex.EncodeToString(sum[:])
 }
+
+func (s *Scheduler) FillMode() string { s.mu.Lock(); defer s.mu.Unlock(); return s.fillMode }

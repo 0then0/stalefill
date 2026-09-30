@@ -60,6 +60,42 @@ func TestPassThroughPipelinesAndConnections(t *testing.T) {
 	}
 	wg.Wait()
 }
+
+func TestHandshakePassThrough(t *testing.T) {
+	hooks := scenario.NewScheduler("target", "")
+	s, err := proxy.Start(context.Background(), "127.0.0.1:0", testredis.Start(t), hooks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	c, err := net.Dial("tcp", s.Addr())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	c.SetDeadline(time.Now().Add(time.Second))
+	r := bufio.NewReader(c)
+	var pipeline []byte
+	for _, args := range [][]string{{"AUTH", "SECRET_USERNAME", "SECRET_PASSWORD"}, {"SELECT", "1"}, {"CLIENT", "SETINFO", "LIB-NAME", "fixture"}, {"CLIENT", "SETNAME", "fixture"}, {"HELLO", "3"}} {
+		pipeline = append(pipeline, resp.Encode(args...)...)
+	}
+	if _, err := c.Write(pipeline); err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 5; i++ {
+		f, err := resp.Read(r)
+		if err != nil || f.IsError() {
+			t.Fatal(err, f)
+		}
+		if i < 4 && string(f.Data) != "OK" || i == 4 && f.Kind != '%' {
+			t.Fatal("handshake reply changed", f)
+		}
+	}
+	events, problem, infra := hooks.Snapshot()
+	if len(events) != 0 || problem != "" || infra != "" {
+		t.Fatal("handshake affected schedule", events, problem, infra)
+	}
+}
 func TestHeldConnectionDoesNotBlockOthersAndCloses(t *testing.T) {
 	upstream := testredis.Start(t)
 	hooks := scenario.NewScheduler("target", "")

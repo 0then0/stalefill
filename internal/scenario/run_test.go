@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/0then0/stalefill/internal/demo"
+	"github.com/0then0/stalefill/internal/resp"
 	"github.com/0then0/stalefill/internal/testredis"
 )
 
@@ -519,5 +520,42 @@ func TestProtectedReadCanRefreshItsResponse(t *testing.T) {
 	r := Run(context.Background(), c, false)
 	if r.Outcome != Pass {
 		t.Fatal(r)
+	}
+}
+
+func TestUnsupportedScheduleCancelsWaitingWriteProbe(t *testing.T) {
+	s := NewScheduler("x", "")
+	s.Arm()
+	s.After(wire("HGETALL", "x"), resp.Frame{Kind: '%'})
+	fill := execCommand(wire("HSET", "x", "field", "old"))
+	s.Queued(fill)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	held := make(chan error, 1)
+	go func() { held <- s.Before(ctx, fill) }()
+	if err := s.WaitHeld(ctx); err != nil {
+		t.Fatal(err)
+	}
+	s.Event("write_started")
+	h := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.Copy(io.Discard, r.Body)
+		// The application's writer queued its invalidation behind the held
+		// EXEC on the same socket, so it cannot finish the HTTP request.
+		s.Queued(wire("DEL", "x"))
+		<-r.Context().Done()
+	}))
+	defer h.Close()
+	result := scheduleProbe(ctx, s, Probe{Method: "PUT", URL: h.URL, Status: 200})
+	if result.err == nil || ctx.Err() != nil {
+		t.Fatal("write waited for invocation timeout or succeeded")
+	}
+	report := InitialReport(Config{})
+	classifyProbe(&report, s)
+	if report.Outcome != Unresolved || report.Findings[0].ID != "SF006" {
+		t.Fatal(report)
+	}
+	cancel()
+	if err := <-held; err != context.Canceled {
+		t.Fatal(err)
 	}
 }

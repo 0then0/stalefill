@@ -1,0 +1,124 @@
+{
+  "tool_version": "0.2.0",
+  "scenario": "stale_fill_after_invalidation",
+  "outcome": "FAIL",
+  "fill_mode": "transactional_hash",
+  "key_sha256": "1cc40f4fd022a3f483f67f2db687adc4ef59dec44c5a59da1d1ca1ba2c4bd874",
+  "events": [
+    {
+      "state": "BASELINE",
+      "seq": 1,
+      "event": "baseline_started",
+      "elapsed_ms": 0
+    },
+    {
+      "state": "BASELINE",
+      "seq": 2,
+      "event": "baseline_completed",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "PREPARED",
+      "seq": 3,
+      "event": "prepared",
+      "elapsed_ms": 13
+    },
+    {
+      "state": "READ_STARTED",
+      "seq": 4,
+      "event": "read_started",
+      "elapsed_ms": 13
+    },
+    {
+      "state": "CACHE_MISS_OBSERVED",
+      "seq": 5,
+      "event": "cache_miss_observed",
+      "elapsed_ms": 14,
+      "command": "HGETALL"
+    },
+    {
+      "state": "STALE_SET_HELD",
+      "seq": 6,
+      "event": "fill_transaction_identified",
+      "elapsed_ms": 16,
+      "command": "EXEC"
+    },
+    {
+      "state": "STALE_SET_HELD",
+      "seq": 7,
+      "event": "fill_exec_held",
+      "elapsed_ms": 16,
+      "command": "EXEC"
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 8,
+      "event": "write_started",
+      "elapsed_ms": 16
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 9,
+      "event": "invalidation_applied",
+      "elapsed_ms": 18,
+      "command": "DEL"
+    },
+    {
+      "state": "WRITE_AND_INVALIDATION_COMPLETED",
+      "seq": 10,
+      "event": "write_completed",
+      "elapsed_ms": 19
+    },
+    {
+      "state": "AUTHORITATIVE_CONFIRMED",
+      "seq": 11,
+      "event": "authoritative_confirmed",
+      "elapsed_ms": 19
+    },
+    {
+      "state": "STALE_SET_RELEASED",
+      "seq": 12,
+      "event": "fill_exec_released",
+      "elapsed_ms": 19,
+      "command": "EXEC"
+    },
+    {
+      "state": "STALE_SET_COMPLETED",
+      "seq": 13,
+      "event": "fill_exec_completed",
+      "elapsed_ms": 19,
+      "command": "EXEC"
+    },
+    {
+      "state": "READ_COMPLETED",
+      "seq": 14,
+      "event": "read_completed",
+      "elapsed_ms": 20
+    },
+    {
+      "state": "VERIFY",
+      "seq": 15,
+      "event": "verify_started",
+      "elapsed_ms": 20
+    },
+    {
+      "state": "FAIL",
+      "seq": 16,
+      "event": "verification_stale",
+      "elapsed_ms": 20
+    }
+  ],
+  "findings": [
+    {
+      "id": "SF001",
+      "message": "stale cache resurrection"
+    }
+  ],
+  "duration_ms": 20,
+  "environment": {
+    "arch": "arm64",
+    "go": "go1.27.1",
+    "os": "darwin",
+    "protocol": "RESP2 / non-streaming RESP3"
+  }
+}
