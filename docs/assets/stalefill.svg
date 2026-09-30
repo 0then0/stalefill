@@ -1,0 +1,31 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="128"
+  height="128"
+  viewBox="0 0 160 160"
+  fill="none"
+  role="img"
+  aria-labelledby="title description"
+>
+  <title id="title">StaleFill</title>
+  <desc
+    id="description"
+  >An old cache fill pauses at a barrier, then returns to the cache after a newer invalidation.</desc>
+  <style>
+    .cache { stroke: #334155; }
+    @media (prefers-color-scheme: dark) { .cache { stroke: #cbd5e1; } }
+  </style>
+  <g stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <!-- The old fill waits at a command barrier before taking the late path. -->
+    <path d="M20 36H48" stroke="#b7791f" />
+    <path d="M60 26V46M72 26V46" stroke="#b7791f" />
+    <path
+      d="M84 36H130Q144 36 144 50V114Q144 128 130 128H116V108M108 116L116 108L124 116"
+      stroke="#b7791f"
+    />
+    <!-- A newer invalidation reaches the cache first. -->
+    <path d="M20 84H88M80 76L88 84L80 92" stroke="#0f8b8d" />
+    <rect class="cache" x="98" y="62" width="38" height="42" rx="8" />
+    <path d="M110 76L124 90M124 76L110 90" stroke="#0f8b8d" />
+  </g>
+</svg>

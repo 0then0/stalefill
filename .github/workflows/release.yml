@@ -1,0 +1,40 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: --health-cmd "redis-cli ping" --health-interval 2s --health-timeout 2s --health-retries 20
+      valkey:
+        image: valkey/valkey:8-alpine
+        ports: ['6381:6379']
+        options: --health-cmd "valkey-cli ping" --health-interval 2s --health-timeout 2s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - run: test -z "$(gofmt -l cmd internal)"
+      - run: go vet ./...
+      - run: go test ./...
+      - run: go test -race ./...
+        env:
+          REDIS_TEST_ADDR: 127.0.0.1:6379
+      - run: go test -race ./internal/scenario -run TestRealRedisDemos -count=1
+        env:
+          REDIS_TEST_ADDR: 127.0.0.1:6381
+      - name: Build archives and checksums
+        run: scripts/release.sh "$GITHUB_REF_NAME"
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.tar.gz dist/*.zip dist/SHA256SUMS --verify-tag --title "StaleFill $GITHUB_REF_NAME" --notes-file "docs/releases/$GITHUB_REF_NAME.md"

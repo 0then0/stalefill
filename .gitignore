@@ -30,3 +30,12 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+.DS_Store
+
+# Local builds and integration reports
+/bin/
+/dist/
+/stalefill.json
+/stalefill-repro.json
+/broken.json
+/fixed.json

@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "redis": {
+    "listen": "127.0.0.1:6380",
+    "upstream": "127.0.0.1:6379",
+    "allow_remote": false
+  },
+  "scenario": {
+    "type": "stale_fill_after_invalidation",
+    "key": "product:42",
+    "timeout": "10s"
+  },
+  "prepare": {
+    "method": "PUT",
+    "url": "http://127.0.0.1:8080/items/42",
+    "json": {
+      "version": 1
+    },
+    "status": 200
+  },
+  "read": {
+    "method": "GET",
+    "url": "http://127.0.0.1:8080/items/42",
+    "status": 200,
+    "assert": {
+      "json_path": "$.version",
+      "equals": 1
+    }
+  },
+  "write": {
+    "method": "PUT",
+    "url": "http://127.0.0.1:8080/items/42",
+    "json": {
+      "version": 2
+    },
+    "status": 200
+  },
+  "authoritative": {
+    "method": "GET",
+    "url": "http://127.0.0.1:8080/authoritative/42",
+    "status": 200,
+    "assert": {
+      "json_path": "$.version",
+      "equals": 2
+    }
+  },
+  "verify": {
+    "method": "GET",
+    "url": "http://127.0.0.1:8080/items/42",
+    "status": 200,
+    "assert": {
+      "json_path": "$.version",
+      "equals": 2
+    }
+  }
+}

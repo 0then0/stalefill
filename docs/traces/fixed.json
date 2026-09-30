@@ -1,0 +1,110 @@
+{
+  "tool_version": "0.1.0",
+  "scenario": "stale_fill_after_invalidation",
+  "outcome": "PASS",
+  "key_sha256": "1cc40f4fd022a3f483f67f2db687adc4ef59dec44c5a59da1d1ca1ba2c4bd874",
+  "events": [
+    {
+      "state": "BASELINE",
+      "seq": 1,
+      "event": "baseline_started",
+      "elapsed_ms": 1
+    },
+    {
+      "state": "BASELINE",
+      "seq": 2,
+      "event": "baseline_completed",
+      "elapsed_ms": 16
+    },
+    {
+      "state": "PREPARED",
+      "seq": 3,
+      "event": "prepared",
+      "elapsed_ms": 17
+    },
+    {
+      "state": "READ_STARTED",
+      "seq": 4,
+      "event": "read_started",
+      "elapsed_ms": 17
+    },
+    {
+      "state": "CACHE_MISS_OBSERVED",
+      "seq": 5,
+      "event": "cache_miss_observed",
+      "elapsed_ms": 18,
+      "command": "GET"
+    },
+    {
+      "state": "STALE_SET_HELD",
+      "seq": 6,
+      "event": "stale_set_held",
+      "elapsed_ms": 18,
+      "command": "SET"
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 7,
+      "event": "write_started",
+      "elapsed_ms": 18
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 8,
+      "event": "invalidation_applied",
+      "elapsed_ms": 19,
+      "command": "DEL"
+    },
+    {
+      "state": "WRITE_AND_INVALIDATION_COMPLETED",
+      "seq": 9,
+      "event": "write_completed",
+      "elapsed_ms": 19
+    },
+    {
+      "state": "AUTHORITATIVE_CONFIRMED",
+      "seq": 10,
+      "event": "authoritative_confirmed",
+      "elapsed_ms": 19
+    },
+    {
+      "state": "STALE_SET_RELEASED",
+      "seq": 11,
+      "event": "stale_set_released",
+      "elapsed_ms": 19
+    },
+    {
+      "state": "STALE_SET_COMPLETED",
+      "seq": 12,
+      "event": "stale_set_completed",
+      "elapsed_ms": 20,
+      "command": "SET"
+    },
+    {
+      "state": "READ_COMPLETED",
+      "seq": 13,
+      "event": "read_completed",
+      "elapsed_ms": 20
+    },
+    {
+      "state": "VERIFY",
+      "seq": 14,
+      "event": "verify_started",
+      "elapsed_ms": 20
+    },
+    {
+      "state": "PASS",
+      "seq": 15,
+      "event": "verification_passed",
+      "elapsed_ms": 21
+    }
+  ],
+  "findings": [],
+  "duration_ms": 21,
+  "environment": {
+    "arch": "arm64",
+    "go": "go1.27.1",
+    "os": "darwin",
+    "protocol": "RESP2 / non-streaming RESP3"
+  }
+}
