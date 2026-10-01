@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.1
+
+[Release notes](docs/releases/v0.3.1.md).
+
+- Prevent canceled upstream connection attempts during proxy cleanup from adding false infrastructure-error events to completed traces; preserve genuine connection failures.
+- Retain every client compatibility report, configuration, stderr and fixture log with `--artifact-dir`, including failed batches; include both event lists in trace mismatch diagnostics.
+- Add a bounded pinned gocache positive control to CI and preserve reports from client compatibility checks on failure.
+- Use Node.js 24-compatible artifact uploads.
+- Include the compact gocache upstream regression evidence, deterministic test sources, experimental patch and reproduction guide in release archives; update public documentation and historical case references.
+
+CLI commands, version-1 configurations, finding IDs, verdict semantics and supported publication patterns remain compatible. The gocache patch is an experimental review artifact and does not modify the pinned fixture dependency.
+
 ## 0.3.0
 
 [Release notes](docs/releases/v0.3.0.md).

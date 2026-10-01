@@ -13,7 +13,7 @@ import (
 	"github.com/0then0/stalefill/internal/resp"
 )
 
-const Version = "0.3.0"
+const Version = "0.3.1"
 const (
 	Pass                = "PASS"
 	Fail                = "FAIL"

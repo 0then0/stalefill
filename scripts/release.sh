@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
-version=${1:-v0.3.0}
-if [ "$version" != "v0.3.0" ]; then
-  echo 'This release script targets the current CLI version v0.3.0' >&2
+version=${1:-v0.3.1}
+if [ "$version" != "v0.3.1" ]; then
+  echo 'This release script targets the current CLI version v0.3.1' >&2
   exit 1
 fi
 mkdir -p dist

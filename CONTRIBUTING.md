@@ -42,7 +42,7 @@ Keep changes focused. Discuss the concrete need before adding a dependency or ar
 After the required checks pass, build the current version's archives:
 
 ```sh
-scripts/release.sh v0.3.0
+scripts/release.sh v0.3.1
 python3 scripts/verify_release.py dist
 ```
 

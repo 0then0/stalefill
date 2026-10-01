@@ -28,7 +28,7 @@ def verify(directory):
         if len(roots) != 1:
             raise ValueError(f"{name}: expected one archive root")
         root = roots.pop()
-        for required in ("README.md", "CHANGELOG.md", "docs/releases/v0.1.0.md", "docs/releases/v0.2.0.md", "docs/releases/v0.3.0.md"):
+        for required in ("README.md", "CHANGELOG.md", "docs/releases/v0.1.0.md", "docs/releases/v0.2.0.md", "docs/releases/v0.3.0.md", "docs/releases/v0.3.1.md"):
             if f"{root}/{required}" not in files:
                 raise ValueError(f"{name}: missing {required}")
         for path, data in files.items():
