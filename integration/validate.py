@@ -7,6 +7,7 @@ health polling only waits for the fixture HTTP listener to start.
 import argparse
 import json
 import os
+import shutil
 import socket
 import subprocess
 import tempfile
@@ -25,6 +26,10 @@ def address():
 
 def validate(args):
     results = []
+    artifact_dir = getattr(args, "artifact_dir", None)
+    if artifact_dir:
+        artifact_dir = Path(artifact_dir)
+        artifact_dir.mkdir(parents=True, exist_ok=False)
     commands = {
         "redis-py": [args.python, str(ROOT / "integration/redis-py/app.py")],
         "go-redis": [str(Path(args.go_fixture).resolve())],
@@ -43,6 +48,18 @@ def validate(args):
                     for step in ("prepare", "read", "write", "verify"):
                         config[step]["url"] = base + "/items/42"
                     config["authoritative"]["url"] = base + "/authoritative/42"
+                    retained = None
+                    if artifact_dir:
+                        retained = (
+                            artifact_dir
+                            / name
+                            / f"resp{protocol}"
+                            / f"{args.fill}-{mode}"
+                        )
+                        retained.mkdir(parents=True)
+                        (retained / "config.json").write_text(
+                            json.dumps(config, indent=2) + "\n"
+                        )
                     config_path = tmp / "config.json"
                     config_path.write_text(json.dumps(config))
                     with (tmp / "fixture.log").open("w+") as log:
@@ -95,6 +112,13 @@ def validate(args):
                                     timeout=15,
                                     check=False,  # Broken fixtures must exit 1 (FAIL).
                                 )
+                                if retained:
+                                    (
+                                        retained / f"run-{repetition + 1:02d}.json"
+                                    ).write_text(run.stdout)
+                                    (
+                                        retained / f"run-{repetition + 1:02d}.stderr"
+                                    ).write_text(run.stderr)
                                 report = json.loads(run.stdout)
                                 expected, code = (
                                     ("FAIL", 1) if mode == "broken" else ("PASS", 0)
@@ -166,7 +190,8 @@ def validate(args):
                                         )
                                 elif first != events:
                                     raise RuntimeError(
-                                        f"{name} logical trace changed on iteration {repetition}"
+                                        f"{name} RESP{protocol} {args.fill} {mode} logical trace changed "
+                                        f"on iteration {repetition}: first={first}, current={events}"
                                     )
                             result = {
                                 "client": name,
@@ -187,6 +212,11 @@ def validate(args):
                             except subprocess.TimeoutExpired:
                                 app.kill()
                                 app.wait()
+                            if retained:
+                                log.flush()
+                                shutil.copyfile(
+                                    tmp / "fixture.log", retained / "fixture.log"
+                                )
     if args.output:
         Path(args.output).write_text(
             json.dumps({"server": args.server, "clients": results}, indent=2) + "\n"
@@ -216,6 +246,10 @@ if __name__ == "__main__":
     )
     parser.add_argument("--output")
     parser.add_argument("--trace-dir")
+    parser.add_argument(
+        "--artifact-dir",
+        help="new directory retaining every CLI report, config and fixture log, including failed runs",
+    )
     args = parser.parse_args()
     if args.repetitions < 1:
         parser.error("repetitions must be positive")

@@ -44,7 +44,7 @@ python3 integration/validate.py --upstream 127.0.0.1:6379 \
   --clients redis-py --fill single
 ```
 
-Repeat on Valkey with its address and `--server Valkey-9.1.2`. The runner keeps a fixture process alive for 24 invocations, checks expected exit codes and finding IDs, and compares logical ordering. It stops at the first failed outcome; it does not turn infrastructure failures into successful repetition evidence. Optional `--output` writes the summary, and `--trace-dir` saves sanitized transactional traces.
+Repeat on Valkey with its address and `--server Valkey-9.1.2`. The runner keeps a fixture process alive for 24 invocations, checks expected exit codes and finding IDs, and compares logical ordering. It stops at the first failed outcome; it does not turn infrastructure failures into successful repetition evidence. Optional `--output` writes the summary, and `--trace-dir` saves sanitized transactional traces. `--artifact-dir` retains every CLI report, stderr, configuration and fixture log in a new directory, including failed runs. CI uploads these artifacts for each server even when validation fails; trace mismatch errors include both event lists.
 
 ## Scope of the compatibility checks
 

@@ -106,7 +106,9 @@ func (s *Server) serve(client net.Conn) {
 	defer cancel()
 	up, e := (&net.Dialer{Timeout: 3 * time.Second}).DialContext(ctx, "tcp", s.upstream)
 	if e != nil {
-		s.hooks.Error("upstream connection failed")
+		if ctx.Err() == nil {
+			s.hooks.Error("upstream connection failed")
+		}
 		return
 	}
 	s.track(up)
