@@ -372,6 +372,78 @@ def validate(args):
         json.dumps({"counts": summary["counts"], "stages": summary["stages"]}),
         flush=True,
     )
+    return summary
+
+
+def require_positive_control(args, summary):
+    """Accept only a complete SF001 schedule on the pinned vulnerable target.
+
+    This is validation of the detector, not a different library verdict. Read
+    every retained report; counts alone cannot establish schedule completion.
+    """
+    if (
+        summary["baseline"]["doctor_outcome"] != "PASS"
+        or summary["requested_runs"] != args.runs
+        or summary["independent_fixture_processes"] != args.runs
+        or len(summary["runs"]) != args.runs
+        or summary["counts"] != {
+            name: args.runs if name == "FAIL" else 0 for name in CODES
+        }
+    ):
+        raise RuntimeError("positive control requires every requested run to FAIL SF001")
+    required = (
+        "baseline_completed",
+        "prepared",
+        "read_started",
+        "cache_miss_observed",
+        "stale_set_held",
+        "write_started",
+        "invalidation_applied",
+        "write_completed",
+        "authoritative_confirmed",
+        "stale_set_released",
+        "stale_set_completed",
+        "verify_started",
+        "verification_stale",
+    )
+    for row in summary["runs"]:
+        report = json.loads(
+            (args.output / f"run-{row['run']:02d}" / "report.json").read_text()
+        )
+        events = report["events"]
+        names = [event["event"] for event in events]
+        if (
+            report["outcome"] != "FAIL"
+            or [f["id"] for f in report["findings"]] != ["SF001"]
+        ):
+            raise RuntimeError(f"run {row['run']}: expected FAIL SF001")
+        if any(names.count(name) != 1 for name in required + ("read_completed",)):
+            raise RuntimeError(f"run {row['run']}: incomplete or ambiguous schedule")
+        positions = [names.index(name) for name in required]
+        if positions != sorted(positions) or not (
+            names.index("cache_miss_observed")
+            < names.index("read_completed")
+            < names.index("verify_started")
+        ):
+            raise RuntimeError(f"run {row['run']}: schedule order is incomplete")
+        miss = events[names.index("cache_miss_observed")]
+        held = events[names.index("stale_set_held")]
+        if (
+            not all(miss.get(field, 0) > 0 for field in ("miss_episode", "miss_connection"))
+            or held.get("fill_connection", 0) < 1
+        ):
+            raise RuntimeError(f"run {row['run']}: missing publication attribution")
+        for name in required[4:]:
+            event = events[names.index(name)]
+            if any(
+                event.get(field) != value
+                for field, value in (
+                    ("miss_episode", miss["miss_episode"]),
+                    ("miss_connection", miss["miss_connection"]),
+                    ("fill_connection", held["fill_connection"]),
+                )
+            ):
+                raise RuntimeError(f"run {row['run']}: publication attribution changed")
 
 
 if __name__ == "__main__":
@@ -387,9 +459,16 @@ if __name__ == "__main__":
     )
     parser.add_argument("--runs", type=int, default=24)
     parser.add_argument("--resp", type=int, choices=[2, 3], default=2)
+    parser.add_argument(
+        "--expect-sf001",
+        action="store_true",
+        help="fail validation unless every pinned-target run completes the SF001 schedule",
+    )
     args = parser.parse_args()
     if args.runs < 1:
         parser.error("--runs must be positive")
     args.binary = args.binary.resolve()
     args.fixture = args.fixture.resolve()
-    validate(args)
+    summary = validate(args)
+    if args.expect_sf001:
+        require_positive_control(args, summary)

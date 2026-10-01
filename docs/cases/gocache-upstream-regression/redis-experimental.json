@@ -1,0 +1,121 @@
+{
+  "tool_version": "0.3.0",
+  "scenario": "stale_fill_after_invalidation",
+  "outcome": "UNRESOLVED",
+  "fill_mode": "string",
+  "key_sha256": "675476857ff77cb09e595cd809218651d21d91411b422d91d00fc6596ea0ab6c",
+  "events": [
+    {
+      "state": "BASELINE",
+      "seq": 1,
+      "event": "baseline_started",
+      "elapsed_ms": 2
+    },
+    {
+      "state": "BASELINE",
+      "seq": 2,
+      "event": "baseline_publication_completed",
+      "elapsed_ms": 9,
+      "command": "SET",
+      "miss_episode": 1,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "BASELINE",
+      "seq": 3,
+      "event": "baseline_publication_completed",
+      "elapsed_ms": 11,
+      "command": "SET",
+      "miss_episode": 2,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "BASELINE",
+      "seq": 4,
+      "event": "baseline_completed",
+      "elapsed_ms": 11
+    },
+    {
+      "state": "PREPARED",
+      "seq": 5,
+      "event": "prepared",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "READ_STARTED",
+      "seq": 6,
+      "event": "read_started",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "CACHE_MISS_OBSERVED",
+      "seq": 7,
+      "event": "cache_miss_observed",
+      "elapsed_ms": 13,
+      "command": "GET",
+      "miss_episode": 3,
+      "miss_connection": 1
+    },
+    {
+      "state": "CACHE_MISS_OBSERVED",
+      "seq": 8,
+      "event": "read_completed",
+      "elapsed_ms": 13,
+      "miss_episode": 3,
+      "miss_connection": 1
+    },
+    {
+      "state": "STALE_SET_HELD",
+      "seq": 9,
+      "event": "stale_set_held",
+      "elapsed_ms": 13,
+      "command": "SET",
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 10,
+      "event": "write_started",
+      "elapsed_ms": 13,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "UNRESOLVED",
+      "seq": 11,
+      "event": "multiple_publication_candidates",
+      "elapsed_ms": 2040,
+      "command": "SET",
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "UNRESOLVED",
+      "seq": 12,
+      "event": "write_probe_failed",
+      "elapsed_ms": 2041,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    }
+  ],
+  "findings": [
+    {
+      "id": "SF009",
+      "message": "publication attribution ambiguous: competing candidates or misses, pending prior publication, incompatible ordering/shape or missing old reader observation"
+    }
+  ],
+  "duration_ms": 2041,
+  "environment": {
+    "arch": "arm64",
+    "go": "go1.27.1",
+    "os": "darwin",
+    "protocol": "RESP2 / non-streaming RESP3"
+  }
+}

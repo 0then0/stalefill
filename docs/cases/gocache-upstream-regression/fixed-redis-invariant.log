@@ -1,0 +1,5 @@
+=== RUN   TestLoadableRedisPostDelete
+    redis_integration_test.go:149: {"commands":["set_completed","del_completed","set_completed"],"dependency":"experimental local modified lib/v4.4.0","final_get_loaded":false,"post_delete_value":"V2","redis_value":"V2","stalefill_schedule":"not used"}
+--- PASS: TestLoadableRedisPostDelete (0.01s)
+PASS
+ok  	github.com/0then0/stalefill/integration/gocache	1.033s

@@ -22,10 +22,11 @@ for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; d
   mkdir -p "$folder/docs/assets" "$folder/docs/traces" "$folder/docs/releases" "$folder/examples"
   cp docs/*.md "$folder/docs/"
   cp -R docs/cases "$folder/docs/"
-  # Case studies reference fixture documentation and the scheduler source.
-  mkdir -p "$folder/integration/gocache" "$folder/internal/scenario"
+  # Include the documentation, test sources and patch referenced by case studies.
+  mkdir -p "$folder/integration/gocache/upstream" "$folder/integration/gocache/testdata/upstream"
   cp integration/gocache/README.md "$folder/integration/gocache/"
-  cp internal/scenario/run.go "$folder/internal/scenario/"
+  cp integration/gocache/upstream/README.md integration/gocache/upstream/experimental-fix.patch "$folder/integration/gocache/upstream/"
+  cp integration/gocache/testdata/upstream/*.go "$folder/integration/gocache/testdata/upstream/"
   cp docs/releases/*.md "$folder/docs/releases/"
   cp docs/assets/stalefill.svg "$folder/docs/assets/"
   cp docs/traces/*.json "$folder/docs/traces/"

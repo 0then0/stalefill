@@ -2,6 +2,7 @@
 
 import argparse
 import contextlib
+import copy
 import importlib.util
 import io
 import json
@@ -138,6 +139,71 @@ class BaselineTest(unittest.TestCase):
             self.assertRaisesRegex(AttributeError, "observer programming error"),
         ):
             baseline_probe(Path(tmp), "programming")
+
+
+class PositiveControlTest(unittest.TestCase):
+    def setUp(self):
+        self.report = json.loads(
+            (Path(__file__).resolve().parents[2]
+             / "docs/cases/gocache-v4.4.0-v0.3/redis-fail.json").read_text()
+        )
+        self.summary = {
+            "baseline": {"doctor_outcome": "PASS"},
+            "requested_runs": 1,
+            "independent_fixture_processes": 1,
+            "counts": {name: int(name == "FAIL") for name in validation.CODES},
+            "runs": [{"run": 1}],
+        }
+
+    def check(self, report=None, summary=None):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)
+            (output / "run-01").mkdir()
+            (output / "run-01/report.json").write_text(json.dumps(report or self.report))
+            validation.require_positive_control(
+                argparse.Namespace(output=output, runs=1), summary or self.summary
+            )
+
+    def test_completed_detached_schedule_is_a_successful_positive_control(self):
+        self.check()
+
+    def test_every_other_outcome_and_partial_batch_fails_validation(self):
+        for outcome in ("PASS", "UNRESOLVED", "INFRASTRUCTURE_ERROR"):
+            with self.subTest(outcome=outcome):
+                summary = copy.deepcopy(self.summary)
+                summary["counts"] = {
+                    name: int(name == outcome) for name in validation.CODES
+                }
+                with self.assertRaises(RuntimeError):
+                    self.check(summary=summary)
+        summary = copy.deepcopy(self.summary)
+        summary["independent_fixture_processes"] = 0
+        with self.assertRaises(RuntimeError):
+            self.check(summary=summary)
+
+    def test_sf001_alone_cannot_replace_schedule_or_attribution(self):
+        for fault in ("missing", "order", "episode", "finding", "outcome", "reader"):
+            with self.subTest(fault=fault):
+                report = copy.deepcopy(self.report)
+                events = report["events"]
+                if fault == "missing":
+                    report["events"] = [
+                        e for e in events if e["event"] != "stale_set_completed"
+                    ]
+                elif fault == "order":
+                    events[12], events[13] = events[13], events[12]
+                elif fault == "episode":
+                    events[12]["miss_episode"] = 999
+                elif fault == "finding":
+                    report["findings"] = []
+                elif fault == "outcome":
+                    report["outcome"] = "UNRESOLVED"
+                else:
+                    report["events"] = [
+                        e for e in events if e["event"] != "read_completed"
+                    ]
+                with self.assertRaises(RuntimeError):
+                    self.check(report=report)
 
 
 class ResultAccountingTest(unittest.TestCase):

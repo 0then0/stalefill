@@ -1,0 +1,18 @@
+=== RUN   TestLoadableDeleteDoesNotResurrectInFlightPublication
+    loadable_regression_test.go:117: Delete completed while old Set was held
+    loadable_regression_test.go:128: post-Delete Get = "V1", <nil>; want authoritative V2
+--- FAIL: TestLoadableDeleteDoesNotResurrectInFlightPublication (0.00s)
+=== RUN   TestLoadableMutationDoesNotResurrectQueuedPublication
+=== RUN   TestLoadableMutationDoesNotResurrectQueuedPublication/Delete
+    loadable_regression_test.go:169: post-Delete Get = "V1", <nil>; want V2
+=== RUN   TestLoadableMutationDoesNotResurrectQueuedPublication/Set
+    loadable_regression_test.go:169: post-Set Get = "V1", <nil>; want V2
+--- FAIL: TestLoadableMutationDoesNotResurrectQueuedPublication (0.00s)
+    --- FAIL: TestLoadableMutationDoesNotResurrectQueuedPublication/Delete (0.00s)
+    --- FAIL: TestLoadableMutationDoesNotResurrectQueuedPublication/Set (0.00s)
+=== RUN   TestLoadableDeleteDoesNotPublishOverlappingLoad
+    loadable_regression_test.go:204: post-Delete Get = "V1", <nil>; want V2
+--- FAIL: TestLoadableDeleteDoesNotPublishOverlappingLoad (0.00s)
+FAIL
+FAIL	github.com/eko/gocache/lib/v4/cache	0.016s
+FAIL

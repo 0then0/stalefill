@@ -5,6 +5,53 @@ on:
 permissions:
   contents: read
 jobs:
+  gocache-positive-control:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    services:
+      cache:
+        image: redis:8.10.2-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 2s --health-timeout 2s --health-retries 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.27.x'
+          cache: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.13'
+      - run: go build -o bin/stalefill ./cmd/stalefill
+      - run: go mod verify && go vet -mod=readonly ./... && go build -mod=readonly -o ../../bin/gocache-fixture .
+        working-directory: integration/gocache
+      - run: python3 -m unittest discover -s integration/gocache -p 'test_*.py'
+      - name: Record actual disposable server version and image
+        run: |
+          version=$(docker exec '${{ job.services.cache.id }}' redis-server --version)
+          printf '%s\n' "$version" > bin/gocache-server-version.txt
+          case "$version" in
+            *'v=8.10.2 '*) ;;
+            *) exit 1 ;;
+          esac
+          docker inspect '${{ job.services.cache.id }}' --format '{{.Image}}' > bin/gocache-server-image.txt
+      - name: Pinned gocache must complete the SF001 schedule, three RESP2 runs
+        run: >-
+          python3 integration/gocache/validate.py --upstream 127.0.0.1:6379
+          --server 'Redis 8.10.2' --binary bin/stalefill --fixture bin/gocache-fixture
+          --output bin/gocache-positive-control --runs 3 --resp 2 --expect-sf001
+      - name: Retain every report, including partial and failed batches
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gocache-positive-control
+          path: |
+            bin/gocache-positive-control/
+            bin/gocache-server-version.txt
+            bin/gocache-server-image.txt
+          if-no-files-found: warn
   client-compat:
     uses: ./.github/workflows/client-compat.yml
   test:

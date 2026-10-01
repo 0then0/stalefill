@@ -27,7 +27,7 @@ Without `REDIS_TEST_ADDR`, tests that require a real server skip explicitly; pro
 
 Python fixture error-handling tests run with `integration/redis-py/.venv/bin/python -m unittest discover -s integration -p 'test_*.py'` after installing the pinned fixture dependencies.
 
-Core CI checks Go 1.26 and 1.27 against Redis and Valkey. The separate client workflow checks all three pinned clients in RESP2 and RESP3, with 24 repetitions per broken/protected combination. Run the checks relevant to your change and include their results in the pull request.
+Core CI checks Go 1.26 and 1.27 against Redis and Valkey. The separate client workflow checks all three pinned clients in RESP2 and RESP3, with 24 repetitions per broken/protected combination. The gocache positive control runs three complete `FAIL SF001` schedules against an unmodified pinned library and retains its reports. See the [fixture guide](integration/gocache/README.md#harness-regression-tests-and-ci) for its dependency-free Python tests and reproduction commands. Run the checks relevant to your change and include their results in the pull request.
 
 ## Scheduling and regression tests
 

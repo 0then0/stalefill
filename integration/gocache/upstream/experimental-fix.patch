@@ -1,0 +1,197 @@
+--- a/lib/cache/loadable.go
++++ b/lib/cache/loadable.go
+@@ -17,10 +17,31 @@
+ )
+ 
+ type loadableKeyValue[T any] struct {
+-	key     any
+-	value   T
+-	options []store.Option
+-}
++	key        any
++	value      T
++	options    []store.Option
++	state      *loadableKeyState
++	generation uint64
++}
++
++// A state is retained by active operations and queued publications only.
++// The gate serializes publication with mutation for this instance and key.
++type loadableKeyState struct {
++	gate       chan struct{}
++	generation uint64
++	refs       int
++}
++
++func (s *loadableKeyState) lock(ctx context.Context) error {
++	select {
++	case s.gate <- struct{}{}:
++		return nil
++	case <-ctx.Done():
++		return ctx.Err()
++	}
++}
++
++func (s *loadableKeyState) unlock() { <-s.gate }
+ 
+ type LoadFunction[T any] func(ctx context.Context, key any) (T, []store.Option, error)
+ 
+@@ -31,6 +52,8 @@
+ 	cache        CacheInterface[T]
+ 	setChannel   chan *loadableKeyValue[T]
+ 	setCache     sync.Map
++	statesMu     sync.Mutex
++	states       map[string]*loadableKeyState
+ 	done         chan struct{}
+ 	closeOnce    sync.Once
+ 	setterWg     sync.WaitGroup
+@@ -47,6 +70,7 @@
+ 		cache:        cache,
+ 		setChannel:   make(chan *loadableKeyValue[T], 10000),
+ 		done:         make(chan struct{}),
++		states:       make(map[string]*loadableKeyState),
+ 	}
+ 
+ 	loadable.setterWg.Add(1)
+@@ -85,10 +109,38 @@
+ // setItem stores a loaded value into the cache and releases it from the
+ // temporary-while-setter-works cache
+ func (c *LoadableCache[T]) setItem(item *loadableKeyValue[T]) {
+-	c.Set(context.Background(), item.key, item.value, item.options...)
+-
+ 	cacheKey := c.getCacheKey(item.key)
++	defer c.releaseState(cacheKey, item.state)
++	_ = item.state.lock(context.Background())
++	defer item.state.unlock()
++	if item.generation != item.state.generation {
++		return
++	}
++
++	// Hold the gate through the underlying call, not just the generation check.
++	c.cache.Set(context.Background(), item.key, item.value, item.options...)
+ 	c.setCache.Delete(cacheKey)
++}
++
++func (c *LoadableCache[T]) acquireState(key string) *loadableKeyState {
++	c.statesMu.Lock()
++	defer c.statesMu.Unlock()
++	state := c.states[key]
++	if state == nil {
++		state = &loadableKeyState{gate: make(chan struct{}, 1)}
++		c.states[key] = state
++	}
++	state.refs++
++	return state
++}
++
++func (c *LoadableCache[T]) releaseState(key string, state *loadableKeyState) {
++	c.statesMu.Lock()
++	defer c.statesMu.Unlock()
++	state.refs--
++	if state.refs == 0 {
++		delete(c.states, key)
++	}
+ }
+ 
+ // Get returns the object stored in cache if it exists
+@@ -97,29 +149,56 @@
+ 	if value, err, _ := c.singleFlight.Do(
+ 		cacheKey,
+ 		func() (any, error) {
+-			// try temporary-while-setter-works cache
++			state := c.acquireState(cacheKey)
++			defer c.releaseState(cacheKey, state)
++			// Keep temporary hits independent of the background store latency.
+ 			if v, ok := c.setCache.Load(cacheKey); ok {
+ 				return v, nil
+ 			}
++			if err := state.lock(ctx); err != nil {
++				return *new(T), err
++			}
+ 			// try main cache
+ 			if v, err := c.cache.Get(ctx, key); err == nil {
++				state.unlock()
+ 				return v, err
+ 			}
++			generation := state.generation
++			state.unlock()
+ 			// Unable to find in cache, try to load it from load function
+ 			if value, options, err := c.loadFunc(ctx, key); err == nil {
+ 
+-				// cache locally until main cache is set
++				if err := state.lock(ctx); err != nil {
++					return value, nil
++				}
++				if generation != state.generation {
++					state.unlock()
++					// An overlapping mutation invalidated this load. Its caller
++					// may receive the snapshot, but it must not be published.
++					return value, nil
++				}
++				select {
++				case <-c.done:
++					state.unlock()
++					return value, nil
++				default:
++				}
+ 				c.setCache.Store(cacheKey, value)
+-
++				// Transfer a reference to the publication before dropping the
++				// gate. Never hold the gate while waiting on a full queue.
++				c.acquireState(cacheKey)
++				item := &loadableKeyValue[T]{key: key, value: value, options: options,
++					state: state, generation: generation}
++				state.unlock()
+ 				select {
+-				case c.setChannel <- &loadableKeyValue[T]{
+-					key:     key,
+-					value:   value,
+-					options: options,
+-				}:
++				case c.setChannel <- item:
+ 				case <-c.done:
+-					// no setter left to hand the value over to, do not retain it
+-					c.setCache.Delete(cacheKey)
++					_ = state.lock(context.Background())
++					if generation == state.generation {
++						c.setCache.Delete(cacheKey)
++					}
++					state.unlock()
++					c.releaseState(cacheKey, state)
+ 				}
+ 
+ 				return value, err
+@@ -145,11 +224,32 @@
+ 
+ // Set sets a value in available caches
+ func (c *LoadableCache[T]) Set(ctx context.Context, key any, object T, options ...store.Option) error {
++	cacheKey := c.getCacheKey(key)
++	state := c.acquireState(cacheKey)
++	defer c.releaseState(cacheKey, state)
++	if err := state.lock(ctx); err != nil {
++		return err
++	}
++	defer state.unlock()
++	state.generation++
++	c.setCache.Delete(cacheKey)
+ 	return c.cache.Set(ctx, key, object, options...)
+ }
+ 
+-// Delete removes a value from cache
++// Delete removes a value from cache. For this instance and key, it waits for
++// an in-flight publication and invalidates older queued publications and loads.
++// The underlying cache must apply Set and Delete before returning for their
++// effects to have the same order. Other instances and direct store users are
++// not coordinated.
+ func (c *LoadableCache[T]) Delete(ctx context.Context, key any) error {
++	cacheKey := c.getCacheKey(key)
++	state := c.acquireState(cacheKey)
++	defer c.releaseState(cacheKey, state)
++	if err := state.lock(ctx); err != nil {
++		return err
++	}
++	defer state.unlock()
++	state.generation++
+ 	// Drop the value possibly waiting to be stored in the main cache, otherwise
+ 	// a following Get would serve the value that has just been deleted.
+ 	c.setCache.Delete(c.getCacheKey(key))

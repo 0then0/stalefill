@@ -1,0 +1,168 @@
+{
+  "tool_version": "0.3.0",
+  "scenario": "stale_fill_after_invalidation",
+  "outcome": "FAIL",
+  "fill_mode": "string",
+  "key_sha256": "675476857ff77cb09e595cd809218651d21d91411b422d91d00fc6596ea0ab6c",
+  "events": [
+    {
+      "state": "BASELINE",
+      "seq": 1,
+      "event": "baseline_started",
+      "elapsed_ms": 3
+    },
+    {
+      "state": "BASELINE",
+      "seq": 2,
+      "event": "baseline_publication_completed",
+      "elapsed_ms": 9,
+      "command": "SET",
+      "miss_episode": 1,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "BASELINE",
+      "seq": 3,
+      "event": "baseline_publication_completed",
+      "elapsed_ms": 10,
+      "command": "SET",
+      "miss_episode": 2,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "BASELINE",
+      "seq": 4,
+      "event": "baseline_completed",
+      "elapsed_ms": 10
+    },
+    {
+      "state": "PREPARED",
+      "seq": 5,
+      "event": "prepared",
+      "elapsed_ms": 11
+    },
+    {
+      "state": "READ_STARTED",
+      "seq": 6,
+      "event": "read_started",
+      "elapsed_ms": 11
+    },
+    {
+      "state": "CACHE_MISS_OBSERVED",
+      "seq": 7,
+      "event": "cache_miss_observed",
+      "elapsed_ms": 12,
+      "command": "GET",
+      "miss_episode": 3,
+      "miss_connection": 1
+    },
+    {
+      "state": "STALE_SET_HELD",
+      "seq": 8,
+      "event": "stale_set_held",
+      "elapsed_ms": 12,
+      "command": "SET",
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "STALE_SET_HELD",
+      "seq": 9,
+      "event": "read_completed",
+      "elapsed_ms": 12,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 10,
+      "event": "write_started",
+      "elapsed_ms": 12,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 11,
+      "event": "invalidation_applied",
+      "elapsed_ms": 15,
+      "command": "DEL",
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "WRITE_AND_INVALIDATION_COMPLETED",
+      "seq": 12,
+      "event": "write_completed",
+      "elapsed_ms": 15,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "AUTHORITATIVE_CONFIRMED",
+      "seq": 13,
+      "event": "authoritative_confirmed",
+      "elapsed_ms": 16,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "STALE_SET_RELEASED",
+      "seq": 14,
+      "event": "stale_set_released",
+      "elapsed_ms": 16,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "STALE_SET_COMPLETED",
+      "seq": 15,
+      "event": "stale_set_completed",
+      "elapsed_ms": 16,
+      "command": "SET",
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "VERIFY",
+      "seq": 16,
+      "event": "verify_started",
+      "elapsed_ms": 16,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    },
+    {
+      "state": "FAIL",
+      "seq": 17,
+      "event": "verification_stale",
+      "elapsed_ms": 17,
+      "miss_episode": 3,
+      "miss_connection": 1,
+      "fill_connection": 1
+    }
+  ],
+  "findings": [
+    {
+      "id": "SF001",
+      "message": "stale cache resurrection"
+    }
+  ],
+  "duration_ms": 17,
+  "environment": {
+    "arch": "arm64",
+    "go": "go1.27.1",
+    "os": "darwin",
+    "protocol": "RESP2 / non-streaming RESP3"
+  }
+}

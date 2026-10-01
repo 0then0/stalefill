@@ -6,13 +6,13 @@ This extends, and does not replace, the [original v0.2 case study](gocache-v4.4.
 
 ## Provenance and execution
 
-Host: macOS arm64, Go 1.27.1. Servers: disposable Linux arm64 containers, Redis `redis:8.10.2-alpine` and Valkey `valkey/valkey:9.1.2-alpine`, with persistence disabled. Actual server version output and image IDs are retained in [provenance](gocache-v4.4.0-v0.3/provenance.json), together with CLI/fixture SHA256 hashes and a digest of the local core source. This was an uncommitted development build reporting `0.3.0`, based on the recorded main commit, not a published release/tag.
+Host: macOS arm64, Go 1.27.1. Servers: disposable Linux arm64 containers, Redis `redis:8.10.2-alpine` and Valkey `valkey/valkey:9.1.2-alpine`, with persistence disabled. Actual server version output and image IDs are retained in [provenance](gocache-v4.4.0-v0.3/provenance.json), together with CLI/fixture SHA256 hashes and a digest of the local core source. The historical batch used an uncommitted development snapshot reporting `0.3.0`, based on the recorded main commit. Its hashes identify that snapshot; the results are not a verification of the later release binary.
 
 The fixture still uses `github.com/eko/gocache/lib/v4 v4.4.0` and the Redis store from commit `515e65d2cd170b9ba807c64f9b86ed71f6842754`, with go-redis v9.13.0 and RESP2. Each invocation used a fresh fixture process and library instance. Previous instances completed their lifecycle Close/drain before the next began. The isolated server was reused; prepare performed ordinary application deletion. Outcomes were not retried or discarded.
 
 The existing extended doctor preflight passed for each server. Race runs used direct application HTTP endpoints. The CLI's own baseline now joins the successful publications associated with its read and verification miss episodes before mutation and before race prepare. It observes upstream completion through the proxy; it does not inspect values or synthesize Redis commands.
 
-The [reproduction instructions](../../integration/gocache/README.md#v03-detached-scheduling-validation) use the same driver and pinned fixture dependencies. Earlier exploratory development batches were kept separately in temporary directories; the checked-in summaries below describe the final acceptance batch only.
+The [reproduction instructions](../../integration/gocache/README.md#reproduce) use the same driver and pinned fixture dependencies.
 
 ## Evidence
 
@@ -46,4 +46,4 @@ Validation completed: `go test ./...`, `go vet ./...`, and `go test -race ./...`
 
 These finite batches demonstrate removal of the observed v0.2 reader-lifetime and modeled baseline-publication failures in this fixture. They do not establish universal scheduling success or correctness across other interleavings. Timings were affected by local concurrent validation work and passive hook overhead; they are not benchmarks.
 
-Association still requires an isolated selected key with one publication producer per miss. The proxy can reject observed ambiguity but cannot identify a lone unrelated worker or hidden future retry with identical key, command shape and ordering. Joining modeled baseline publications is not proof of global application quiescence. The [architecture](../architecture.md#miss-episodes-and-detached-publication) documents this causal boundary. No upstream issue, PR, release or security report was published.
+Association still requires an isolated selected key with one publication producer per miss. The proxy can reject observed ambiguity but cannot identify a lone unrelated worker or hidden future retry with identical key, command shape and ordering. Joining modeled baseline publications is not proof of global application quiescence. The [architecture](../architecture.md#miss-episodes-and-detached-publication) documents this causal boundary. The subsequent [upstream regression study](gocache-upstream-regression.md) tests the library invariant separately and records the limits of a local experimental fix.

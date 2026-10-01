@@ -1,0 +1,28 @@
+--- FAIL: TestLoadableGetTwice (0.00s)
+    loadable.go:148: Unexpected call to *cache.MockSetterCacheInterface[interface {}].Set([context.Background 1 2]) at <upstream>/lib/cache/loadable.go:148 because: 
+        expected call at <upstream>/lib/cache/loadable_test.go:331 doesn't match the argument at index 2.
+        Got: 2 (uint64)
+        Want: is equal to 1 (uint64)
+    loadable_test.go:337: 
+        	Error Trace:	<upstream>/lib/cache/loadable_test.go:337
+        	Error:      	Not equal: 
+        	            	expected: 0x1
+        	            	actual  : 0x2
+        	Test:       	TestLoadableGetTwice
+    loadable_test.go:338: 
+        	Error Trace:	<upstream>/lib/cache/loadable_test.go:338
+        	Error:      	Not equal: 
+        	            	expected: 0x1
+        	            	actual  : 0x2
+        	Test:       	TestLoadableGetTwice
+FAIL
+FAIL	github.com/eko/gocache/lib/v4/cache	0.042s
+ok  	github.com/eko/gocache/lib/v4/codec	1.023s
+ok  	github.com/eko/gocache/lib/v4/marshaler	1.027s
+ok  	github.com/eko/gocache/lib/v4/metrics	1.027s
+?   	github.com/eko/gocache/lib/v4/mocks/cache	[no test files]
+?   	github.com/eko/gocache/lib/v4/mocks/codec	[no test files]
+?   	github.com/eko/gocache/lib/v4/mocks/metrics	[no test files]
+?   	github.com/eko/gocache/lib/v4/mocks/store	[no test files]
+ok  	github.com/eko/gocache/lib/v4/store	1.020s
+FAIL

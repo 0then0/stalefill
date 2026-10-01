@@ -1,0 +1,275 @@
+{
+  "redis-original": {
+    "upstream": "eko/gocache",
+    "tag": "lib/v4.4.0",
+    "commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+    "server": "Redis 8.10.2",
+    "resp": 2,
+    "stalefill": "0.3.0",
+    "baseline": {
+      "redis_received_V1": true,
+      "repeated_GET_hit_Redis_without_loader": true,
+      "PUT_updated_authoritative_and_Delete_removed_entry": true,
+      "doctor_outcome": "PASS",
+      "following_GET_returned_V2": true
+    },
+    "requested_runs": 3,
+    "independent_fixture_processes": 3,
+    "counts": {
+      "PASS": 0,
+      "FAIL": 3,
+      "UNRESOLVED": 0,
+      "INFRASTRUCTURE_ERROR": 0
+    },
+    "stages": {
+      "FAIL/FAIL/verification_stale": 3
+    },
+    "diagnoses": {
+      "complete_schedule_observed_stale_verification": 3
+    },
+    "runs": [
+      {
+        "run": 1,
+        "outcome": "FAIL",
+        "findings": [
+          "SF001"
+        ],
+        "stage": "FAIL",
+        "last_event": "verification_stale",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 18,
+        "diagnosis": "complete_schedule_observed_stale_verification",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 26,
+        "handler_return_to_SET_attempt_us": 17,
+        "SET_attempt_to_completion_us": 3799
+      },
+      {
+        "run": 2,
+        "outcome": "FAIL",
+        "findings": [
+          "SF001"
+        ],
+        "stage": "FAIL",
+        "last_event": "verification_stale",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 18,
+        "diagnosis": "complete_schedule_observed_stale_verification",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 35,
+        "handler_return_to_SET_attempt_us": 23,
+        "SET_attempt_to_completion_us": 4024
+      },
+      {
+        "run": 3,
+        "outcome": "FAIL",
+        "findings": [
+          "SF001"
+        ],
+        "stage": "FAIL",
+        "last_event": "verification_stale",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 16,
+        "diagnosis": "complete_schedule_observed_stale_verification",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 26,
+        "handler_return_to_SET_attempt_us": 18,
+        "SET_attempt_to_completion_us": 3378
+      }
+    ],
+    "fixture_dependency_kind": "released-unmodified"
+  },
+  "valkey-original": {
+    "upstream": "eko/gocache",
+    "tag": "lib/v4.4.0",
+    "commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+    "server": "Valkey 9.1.2",
+    "resp": 2,
+    "stalefill": "0.3.0",
+    "baseline": {
+      "redis_received_V1": true,
+      "repeated_GET_hit_Redis_without_loader": true,
+      "PUT_updated_authoritative_and_Delete_removed_entry": true,
+      "doctor_outcome": "PASS",
+      "following_GET_returned_V2": true
+    },
+    "requested_runs": 3,
+    "independent_fixture_processes": 3,
+    "counts": {
+      "PASS": 0,
+      "FAIL": 3,
+      "UNRESOLVED": 0,
+      "INFRASTRUCTURE_ERROR": 0
+    },
+    "stages": {
+      "FAIL/FAIL/verification_stale": 3
+    },
+    "diagnoses": {
+      "complete_schedule_observed_stale_verification": 3
+    },
+    "runs": [
+      {
+        "run": 1,
+        "outcome": "FAIL",
+        "findings": [
+          "SF001"
+        ],
+        "stage": "FAIL",
+        "last_event": "verification_stale",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 17,
+        "diagnosis": "complete_schedule_observed_stale_verification",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 26,
+        "handler_return_to_SET_attempt_us": 16,
+        "SET_attempt_to_completion_us": 3993
+      },
+      {
+        "run": 2,
+        "outcome": "FAIL",
+        "findings": [
+          "SF001"
+        ],
+        "stage": "FAIL",
+        "last_event": "verification_stale",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 15,
+        "diagnosis": "complete_schedule_observed_stale_verification",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 28,
+        "handler_return_to_SET_attempt_us": 18,
+        "SET_attempt_to_completion_us": 2908
+      },
+      {
+        "run": 3,
+        "outcome": "FAIL",
+        "findings": [
+          "SF001"
+        ],
+        "stage": "FAIL",
+        "last_event": "verification_stale",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 18,
+        "diagnosis": "complete_schedule_observed_stale_verification",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 19,
+        "handler_return_to_SET_attempt_us": 13,
+        "SET_attempt_to_completion_us": 2997
+      }
+    ],
+    "fixture_dependency_kind": "released-unmodified"
+  },
+  "redis-experimental": {
+    "upstream": "eko/gocache",
+    "tag": "lib/v4.4.0",
+    "commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+    "server": "Redis 8.10.2; experimental local modified lib",
+    "resp": 2,
+    "stalefill": "0.3.0",
+    "baseline": {
+      "redis_received_V1": true,
+      "repeated_GET_hit_Redis_without_loader": true,
+      "PUT_updated_authoritative_and_Delete_removed_entry": true,
+      "doctor_outcome": "PASS",
+      "following_GET_returned_V2": true
+    },
+    "requested_runs": 3,
+    "independent_fixture_processes": 3,
+    "counts": {
+      "PASS": 0,
+      "FAIL": 0,
+      "UNRESOLVED": 3,
+      "INFRASTRUCTURE_ERROR": 0
+    },
+    "stages": {
+      "UNRESOLVED/UNRESOLVED/write_probe_failed": 3
+    },
+    "diagnoses": {
+      "inspect_trace": 3
+    },
+    "runs": [
+      {
+        "run": 1,
+        "outcome": "UNRESOLVED",
+        "findings": [
+          "SF009"
+        ],
+        "stage": "UNRESOLVED",
+        "last_event": "write_probe_failed",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 2041,
+        "diagnosis": "inspect_trace",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 31,
+        "handler_return_to_SET_attempt_us": 22
+      },
+      {
+        "run": 2,
+        "outcome": "UNRESOLVED",
+        "findings": [
+          "SF009"
+        ],
+        "stage": "UNRESOLVED",
+        "last_event": "write_probe_failed",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 2039,
+        "diagnosis": "inspect_trace",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 23,
+        "handler_return_to_SET_attempt_us": 15
+      },
+      {
+        "run": 3,
+        "outcome": "UNRESOLVED",
+        "findings": [
+          "SF009"
+        ],
+        "stage": "UNRESOLVED",
+        "last_event": "write_probe_failed",
+        "race_started": true,
+        "fill_held": true,
+        "write_started": true,
+        "duration_ms": 2042,
+        "diagnosis": "inspect_trace",
+        "reader_request": 6,
+        "reader_Redis_miss": true,
+        "reader_Redis_hit": false,
+        "load_to_SET_attempt_us": 42,
+        "handler_return_to_SET_attempt_us": 29
+      }
+    ],
+    "fixture_dependency_kind": "local-modified"
+  }
+}

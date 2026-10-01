@@ -1,0 +1,12 @@
+ok  	github.com/eko/gocache/lib/v4/cache	1.044s
+ok  	github.com/eko/gocache/lib/v4/codec	1.024s
+ok  	github.com/eko/gocache/lib/v4/marshaler	1.026s
+ok  	github.com/eko/gocache/lib/v4/metrics	1.023s
+?   	github.com/eko/gocache/lib/v4/mocks/cache	[no test files]
+?   	github.com/eko/gocache/lib/v4/mocks/codec	[no test files]
+?   	github.com/eko/gocache/lib/v4/mocks/metrics	[no test files]
+?   	github.com/eko/gocache/lib/v4/mocks/store	[no test files]
+ok  	github.com/eko/gocache/lib/v4/store	1.013s
+go: downloading github.com/vmihailenco/msgpack/v5 v5.4.1
+go: downloading github.com/kylelemons/godebug v1.1.0
+go: downloading github.com/vmihailenco/tagparser/v2 v2.0.0

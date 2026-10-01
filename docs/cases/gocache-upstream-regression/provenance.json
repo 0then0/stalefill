@@ -1,0 +1,120 @@
+{
+  "date": "2026-10-01",
+  "host": "macOS arm64",
+  "go": "go version go1.27.1 darwin/arm64",
+  "stalefill_commit": "2b332c2f2e5fb25fe6376f7cd8948ba395daa06d",
+  "stalefill_tag": "v0.3.0",
+  "stalefill_binary_sha256": "1378dd2cd182dcf26c2b908104e1c6d9678d8cb5c3e06ffdddd56e26ecf3eefb",
+  "core_source_sha256": "9d86767b057ca4cd31f90ba64cdd2170e973ff4dfe977897834ee983dd2b485d",
+  "core_source_digest_format": "sorted cmd/internal Go files and go.mod; relative path NUL bytes NUL",
+  "upstream": {
+    "module": "github.com/eko/gocache/lib/v4",
+    "version": "v4.4.0",
+    "pinned_commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+    "current_master": "400151c70f7054ff89b5a51d076a247d52b8984b",
+    "current_loadable_identical": true,
+    "pinned_archive_module_cache_files_checked": 35,
+    "pinned_archive_module_cache_mismatches": [],
+    "original_loadable_sha256": "de5dd60a5e2312806cc230ea47dd44a8b051547fdadb309d0cae6b0aca8c6eef",
+    "fixed_loadable_sha256": "9d1226aceb4a4596438ff855c04f1d3ea0d78bfad2f1b58ba896dc57d5bfea7b",
+    "redis_store_version": "v4.2.12-0.20260908213858-515e65d2cd17",
+    "go_redis_version": "v9.13.0",
+    "module_zip_inherited_license_matches_archive_root": true,
+    "master_checked_on": "2026-10-01"
+  },
+  "original_fixture": {
+    "main_sha256": "ae6722e667df351de3921fcbef6e90e48287386a95110eb83b9cedeb5142a111",
+    "go_mod_sha256": "ceeed0fb2db29b72cc61b4962b02e427f98bd5b7990882fc334b548118b8805c",
+    "go_sum_sha256": "bbd86b1e18f9f5b39b949efe0cc85104a09be55b59c0b1ab3b1e543eacac0505",
+    "unchanged": true
+  },
+  "experimental_fixture": {
+    "replace": "github.com/eko/gocache/lib/v4 => ../fixed/lib",
+    "published_upstream_fix": false
+  },
+  "servers": {
+    "redis": {
+      "image": "redis:8.10.2-alpine",
+      "image_id": "sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0",
+      "version": "Redis server v=8.10.2 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=733afb4c18605b55",
+      "persistence": false
+    },
+    "valkey": {
+      "image": "valkey/valkey:9.1.2-alpine",
+      "image_id": "sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11",
+      "version": "Valkey server v=9.1.2 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=5033ebd7516d4c1b",
+      "persistence": false
+    }
+  },
+  "outcomes": {
+    "redis-original": {
+      "PASS": 0,
+      "FAIL": 3,
+      "UNRESOLVED": 0,
+      "INFRASTRUCTURE_ERROR": 0
+    },
+    "valkey-original": {
+      "PASS": 0,
+      "FAIL": 3,
+      "UNRESOLVED": 0,
+      "INFRASTRUCTURE_ERROR": 0
+    },
+    "redis-experimental": {
+      "PASS": 0,
+      "FAIL": 0,
+      "UNRESOLVED": 3,
+      "INFRASTRUCTURE_ERROR": 0
+    }
+  },
+  "scope": {
+    "protocol": "RESP2",
+    "fixture_dependency_kinds": {
+      "redis-original": "released-unmodified",
+      "valkey-original": "released-unmodified",
+      "redis-experimental": "local-modified"
+    },
+    "library_invariant": "post-Delete Get after prior load/publication completion",
+    "library_fix_scope": "single LoadableCache instance; underlying effects applied before successful return",
+    "original_regression_log_capture": "transcribed from command output; dependency download notices omitted",
+    "log_normalization": "machine-local source path prefixes replaced by <upstream>"
+  },
+  "fixture_binaries": {
+    "redis-original": {
+      "dependency_kind": "released-unmodified",
+      "sha256": "db27a9f1d4f965c999a06e39bb7cfec43731fc55d1e150e5dc9b756912f1c8a2",
+      "pinned_base_commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+      "local_replace": null
+    },
+    "valkey-original": {
+      "dependency_kind": "released-unmodified",
+      "sha256": "db27a9f1d4f965c999a06e39bb7cfec43731fc55d1e150e5dc9b756912f1c8a2",
+      "pinned_base_commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+      "local_replace": null
+    },
+    "redis-experimental": {
+      "dependency_kind": "experimental-local-modified",
+      "sha256": "0689ba93794ab21a5e3f69e79651ebe965766cff3d85937d43122128a5a24e8c",
+      "pinned_base_commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+      "local_replace": "../fixed/lib"
+    }
+  },
+  "verification": {
+    "original_regressions": "four invariant failures; no race-detector warnings",
+    "inspected_master_regressions": "four invariant failures; no race-detector warnings",
+    "experimental_regressions": "PASS under -race",
+    "experimental_full_lib_suite": "PASS under -race",
+    "experimental_lib_vet": "PASS",
+    "experimental_real_redis_invariant": "PASS under -race",
+    "original_existing_lib_suite": "FAIL TestLoadableGetTwice; new regressions excluded",
+    "fixture_go_mod_verify": "PASS",
+    "fixture_vet": "PASS",
+    "stalefill_real_server_race_suite": "PASS",
+    "harness_python": "9 tests PASS in normal and optimized mode",
+    "hosted_ci": "not dispatched"
+  },
+  "source_artifacts_sha256": {
+    "integration/gocache/testdata/upstream/loadable_regression_test.go": "f535d13dd443a58616ea3b19f2e79589e5483b97c894c1fc00a69ad86d5dd401",
+    "integration/gocache/testdata/upstream/redis_integration_test.go": "9b52cdd0352f60e043e05d19f5dd12bd6b19302e0cbf27bc76dbce1461a2030d",
+    "integration/gocache/upstream/experimental-fix.patch": "10d3787d270b51671e4642c28eb7b94a99ff013580e68f4839fe78709f2a77cd"
+  }
+}

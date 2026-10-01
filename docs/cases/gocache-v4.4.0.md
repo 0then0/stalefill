@@ -1,11 +1,14 @@
-# External validation: gocache lib/v4.4.0
+# Historical external validation: gocache with StaleFill v0.2
 
 StaleFill v0.2.0 observed stale resurrection in **12 of 24** independent Redis
 runs. The other **12 were UNRESOLVED**, with three distinct stopping conditions.
 There were no PASS or INFRASTRUCTURE_ERROR outcomes. This is evidence of both an
 observable stale-fill schedule and a limitation in v0.2's handling of detached
 background publications. It is **not a deterministic 24/24 external validation**.
-No StaleFill scheduling code or upstream gocache source was changed.
+This historical experiment used the released v0.2.0 scheduler and unmodified
+gocache. See the [v0.3 validation](gocache-v4.4.0-v0.3.md) for subsequent
+detached scheduling results and the [upstream regression](gocache-upstream-regression.md)
+for deterministic library tests and an experimental fix.
 
 ## Versions and provenance
 
@@ -18,8 +21,8 @@ containers run Linux arm64, without persistence.
 - Library dependency: `github.com/eko/gocache/lib/v4 v4.4.0`.
 - Redis store from that same commit:
   `github.com/eko/gocache/store/redis/v4 v4.2.12-0.20260908213858-515e65d2cd17`.
-  The store has a separate module/tag series; it is not a fictional Redis-store
-  v4.4.0 tag. There is no `replace` directive.
+  The store has its own module and tag series. The fixture has no `replace`
+  directive.
 - go-redis v9.13.0, RESP2, ordinary connection pool and retry policy.
 - StaleFill: public `v0.2.0`, commit
   `e4ab5669d294f216a5bd9b5fda5dbcafdf5793fb`, built from unchanged tag source.
@@ -79,14 +82,9 @@ its deletion does not prove publication cancellation. The runtime findings
 below test this distinction.
 
 The tagged [loadable tests](https://github.com/eko/gocache/blob/515e65d2cd170b9ba807c64f9b86ed71f6842754/lib/cache/loadable_test.go)
-were inspected. `TestLoadableGetWhenAvailableInLoadFunc` checks loader
-coalescing; `TestLoadableGetTwice` explicitly waits with Close for the setter;
-`TestLoadableDeleteReleasesValueWaitingToBeSet` checks deletion from temporary
-storage, without an executing Redis Set; Close tests check release, idempotence
-and concurrent Get. Redis-store tests check normal command delegation. The
-tagged README documents background fills; its `example/loadable` uses a
-Ristretto chain and demonstration sleeps. Those sleeps and mock synchronization
-were **not copied** into this experiment. These tests were inspected, not run.
+cover loader coalescing, temporary storage, background setter completion and
+Close. They do not exercise an executing Redis Set ordered after Delete.
+They were inspected, but not run during this historical experiment.
 
 ## Harness and baseline
 
@@ -242,10 +240,10 @@ Both servers exhibit the same completed stale schedule and reader-lifetime
 limitation. Different small-sample proportions do not establish a Redis/Valkey
 behavioral difference; acceptance also depends on Go/HTTP/connection scheduling.
 
-## v0.2 limitation, conclusion and recommendation
+## v0.2 scheduling limitation
 
 The decisive implementation is the barrier wait's `select` in
-[`internal/scenario/run.go`](../../internal/scenario/run.go). It races receipt
+[the v0.2 scheduler source](https://github.com/0then0/stalefill/blob/e4ab5669d294f216a5bd9b5fda5dbcafdf5793fb/internal/scenario/run.go). It races receipt
 of `readDone` against `heldDone`. A successful early reader result still leads
 to SF005, without a write. If the held branch wins, the existing command barrier
 can finish a correct controlled schedule despite the detached HTTP lifetime.
@@ -262,20 +260,11 @@ Passive metadata collection has some overhead and can perturb scheduling;
 the observed proportions are measurements of this environment, not portable
 probabilities or guaranteed results of a later run.
 
-A focused **v0.3 candidate: Detached / Asynchronous Fill Scheduling** is justified
-by runtime evidence. The minimum conceptual change would retain successful
-reader completion as an observation while awaiting a bounded candidate fill,
-then allow write/invalidation/authoritative confirmation/release/verification
-without requiring an outstanding reader. Baseline-to-scenario publication
-isolation also needs an explicit model; treating every later SET as the race
-reader's fill would misattribute the observed baseline case.
-
-Risks include associating unrelated background writes with a miss, multiple
-candidate fills, carried-over publications on pooled connections, swallowing
-actual reader failures, cleanup/retry effects and ambiguous timeouts. These
-require explicit unresolved classifications and evidence before any extension.
-No sleeps, library hooks, new barriers, scenario types or v0.3 implementation
-were added here. No upstream issue, PR or security report was opened.
+StaleFill v0.3 subsequently retained successful early reader completion while
+awaiting a bounded publication candidate and joined modeled baseline miss
+publications before prepare. The [v0.3 case study](gocache-v4.4.0-v0.3.md)
+records complete schedules for this same fixture. Its association limits still
+require an isolated selected key and a single publication producer per miss.
 
 Validation performed: fixture build, `go mod verify`, fixture `go vet ./...`,
 root `go test ./...`, two baseline modes, 24 real Redis race runs and four Valkey

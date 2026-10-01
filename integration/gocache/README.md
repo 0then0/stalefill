@@ -23,15 +23,13 @@ collection has some overhead and can perturb local scheduling.
 
 ## Reproduce
 
-Requires Go 1.26+, Python 3.10+, Docker, and a disposable local server. Run from
-the StaleFill repository root. Use an unchanged v0.2.0 checkout or public binary;
-the runner refuses to interpret broken baseline as a completed race.
+Run from a source checkout of StaleFill v0.3.0 or newer. Requirements: Go
+1.26+, Python 3.10+, Docker, and a disposable local server.
 
 ```sh
-git diff --exit-code v0.2.0 -- cmd internal go.mod
 mkdir -p bin
-go build -o bin/stalefill-v0.2.0 ./cmd/stalefill
-(cd integration/gocache && go mod download && go mod verify && go build -o ../../bin/gocache-fixture .)
+go build -o bin/stalefill ./cmd/stalefill
+(cd integration/gocache && go mod verify && go build -o ../../bin/gocache-fixture .)
 
 docker run -d --rm --name stalefill-gocache-redis \
   -p 127.0.0.1::6379 redis:8.10.2-alpine \
@@ -42,87 +40,82 @@ docker port stalefill-gocache-redis
 # Substitute the actual loopback port printed above.
 python3 integration/gocache/validate.py \
   --upstream 127.0.0.1:PORT --server 'Redis 8.10.2' \
-  --binary bin/stalefill-v0.2.0 --fixture bin/gocache-fixture \
-  --output bin/gocache-redis-validation --runs 24
+  --binary bin/stalefill --fixture bin/gocache-fixture \
+  --output bin/gocache-redis-validation --runs 3 --resp 2 --expect-sf001
 
 docker stop stalefill-gocache-redis
 ```
 
-Go dependencies stay in this fixture module and its checked-in `go.sum`. If the
-normal Go cache is unwritable, set `GOPATH` and `GOCACHE` to disposable writable
-directories before building. No dependency synchronization of other fixtures
-is needed. The output directory must be new, to preserve earlier evidence.
+Dependencies stay in the fixture module and its checked-in `go.sum`; the Go
+build downloads missing modules normally. The output directory must be new
+so earlier evidence is preserved. For Valkey, substitute
+`valkey/valkey:9.1.2-alpine`, `valkey-server`, its actual port and version,
+and a new output directory.
 
-The driver first runs an extended **sequential doctor preflight**. An external
-HTTP write-probe observer waits for the initial background publication using
-read-only upstream Redis observations, repeats ordinary application GET until
-an actual Redis hit occurs without a loader call, then executes ordinary PUT V2
-and checks deletion. These baseline observations do not run inside the
-application and never run during the race. The doctor's final GET must return
-V2. A failed preflight stops all race invocations.
+`--expect-sf001` makes this a positive control of StaleFill's detector: every
+requested run must finish the complete schedule with `FAIL SF001`, including
+stable miss and publication attribution. PASS, UNRESOLVED, infrastructure
+errors and incomplete batches fail validation. Reports are retained before
+this check. Omit the option when exploring another implementation whose
+outcome is unknown. Three runs check startup, baseline publication joins and
+cross-run cleanup; they are not a statistical estimate.
 
-Every subsequent `test` uses the normal v0.2 configuration with **direct**
-application URLs and its own built-in baseline. Each run starts a new application
-and CLI process. A previous application's `Close`/drain finishes before another
-starts. The isolated Redis server is reused; ordinary prepare deletes the one
-selected key. There are no retries of outcomes or sleeps during the race. The
-only driver sleep waits for startup readiness, before invoking the CLI.
+## Baseline and retained artifacts
 
-Artifacts include every CLI report/config, passive application events captured
-after CLI return and after shutdown, stderr, the doctor evidence and a summary
-with four outcome counts, last schedule stage, per-run diagnosis and timings.
-Optional diagnostic transport/JSON failures are recorded separately and do not
-replace the CLI verdict or stop subsequent runs. Unexpected errors propagate
-with their traceback; a partial summary retains every received CLI verdict.
-`requested_runs` and the actual fixture-process count distinguish interrupted
-batches. Baseline checks use explicit conditions, including under Python `-O`;
-only expected baseline and transport/JSON errors become observer HTTP failures.
-SET attempts are client-hook observations, not wire-arrival timestamps. HTTP
-handler return is not claimed to timestamp client body consumption. Read the
-case study for how the unchanged runner's early-return branch establishes that
-the HTTP probe completed in UNRESOLVED cases.
+The driver first runs a sequential doctor preflight. An external HTTP
+write-probe observer uses read-only upstream Redis observations to await the
+initial background publication, repeats ordinary application GET until a
+Redis hit occurs without loading, then executes ordinary PUT V2 and checks
+deletion. The doctor's final GET must return V2. Failed preflight stops the
+batch. These observations run only during baseline, outside the application.
 
-For the secondary server, use `valkey/valkey:9.1.2-alpine` and `valkey-server`,
-verify its actual version, then run the same driver with a new output directory
-and `--server 'Valkey 9.1.2' --runs 4`. Neither distribution is expected to remain
-constant: this experiment exposes nondeterministic scheduling acceptance.
+Each race uses direct application HTTP URLs, the CLI's own baseline, and a
+fresh application and CLI process. Previous applications complete Close/drain
+before another starts. The disposable server is reused; prepare resets the
+selected key through ordinary application deletion. There are no retries of
+outcomes or race sleeps. The driver waits for startup readiness before
+invoking the CLI. StaleFill v0.3 joins modeled baseline miss publications
+before mutation and prepare and records early race reader completion.
 
-See [the case study](../../docs/cases/gocache-v4.4.0.md) and its retained evidence.
+Output includes every CLI report and configuration, passive application
+metadata after CLI return and shutdown, stderr, doctor evidence and a summary
+of outcomes, schedule progress and timings. Diagnostic transport/JSON failures
+are recorded separately and preserve the CLI verdict. Unexpected errors
+propagate; partial summaries retain received verdicts and distinguish requested
+runs from actual fixture processes. Baseline checks also work under Python `-O`.
 
-## Harness regression tests
+Client-hook SET attempts do not timestamp wire arrival. HTTP handler return
+does not timestamp client body consumption. Diagnostic timings are not
+benchmarks. See the [historical v0.2 case](../../docs/cases/gocache-v4.4.0.md)
+for its early-reader and baseline-publication limitations, and the
+[v0.3 validation](../../docs/cases/gocache-v4.4.0-v0.3.md) for detached scheduling
+results. Reproducing v0.2 behavior requires a v0.2 binary built from that tag;
+building the current checkout produces the current scheduler.
 
-These standard-library tests need no Redis server or additional dependencies:
+## Harness regression tests and CI
+
+These standard-library tests need no Redis server or extra dependencies:
 
 ```sh
 python3 -m unittest discover -s integration/gocache -p 'test_*.py'
 ```
 
-They exercise the actual baseline observer with replaced transport/process I/O,
-check required operations in a separate optimized Python process, and verify
-result retention after diagnostic failures or interrupted batches.
+They exercise the baseline observer with replaced transport/process I/O,
+required operations under optimized Python, result retention after diagnostic
+failures or interrupted batches, and the positive control's acceptance rules.
+CI runs the same pinned unmodified fixture against disposable Redis with
+`--runs 3 --resp 2 --expect-sf001` and retains all reports as artifacts.
 
-## v0.3 detached scheduling validation
+## Upstream regression and experimental fix
 
-The same fixture and driver can validate the local v0.3 implementation. Build
-from the current checkout, preserving the pinned dependencies and leaving the
-upstream library and application handlers unchanged:
+The [case study](../../docs/cases/gocache-upstream-regression.md) records a
+deterministic library regression, a local experimental patch and real-server
+results. The [upstream reproduction guide](upstream/README.md) explains how
+to run the tests in isolated copies of the pinned source. Test sources live
+under `testdata/`, which Go excludes from normal package discovery.
 
-```sh
-go build -o bin/stalefill-v0.3.0 ./cmd/stalefill
-(cd integration/gocache && go build -o ../../bin/gocache-fixture .)
-python3 integration/gocache/validate.py \
-  --upstream 127.0.0.1:PORT --server 'Redis 8.10.2' \
-  --binary bin/stalefill-v0.3.0 --fixture bin/gocache-fixture \
-  --output bin/gocache-v03-redis-validation --runs 24
-```
-
-Use a new output directory and the disposable server setup above. For Valkey,
-substitute its actual port/server version and use four independent runs. The
-extended doctor preflight remains a sequential observer; race probes still use
-direct application URLs without sleeps, synchronization hooks or retries of
-outcomes. The v0.3 CLI additionally joins its own baseline miss publications
-before mutation/prepare, and retains the race reader's early old observation.
-
-The [v0.3 case study](../../docs/cases/gocache-v4.4.0-v0.3.md) records completed
-schedules and actual reader completion order. The original v0.2 case study and
-its retained artifacts remain unchanged.
+The experimental patch serializes Delete with an in-flight Set. Delete cannot
+finish while StaleFill holds that Set, so its retained StaleFill batch is
+UNRESOLVED. Correctness evidence for the patch comes from the library invariant
+tests and a separate Redis integration check that releases Set before awaiting
+Delete. Do not use `--expect-sf001` to evaluate the experimental fix.
