@@ -36,6 +36,8 @@ def verify(directory):
                 continue
             for link in re.findall(r"\]\(([^\s)]+)\)", data.decode()):
                 url = urlsplit(link)
+                if f"{root}/docs/releases/" in path and not (url.scheme or url.netloc):
+                    raise ValueError(f"{name}: {path} uses relative release-note link {link}")
                 if url.scheme or url.netloc:
                     continue
                 target = posixpath.normpath(posixpath.join(posixpath.dirname(path), unquote(url.path))) if url.path else path
