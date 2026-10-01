@@ -1,0 +1,41 @@
+{
+  "validation_date": "2026-10-01",
+  "stalefill_commit": "e4ab5669d294f216a5bd9b5fda5dbcafdf5793fb",
+  "stalefill_tag": "v0.2.0",
+  "stalefill_binary_sha256": "315dbece6c257f3ab22df85aa23fbb41a1d55f6e6201e72329f0f39f1d4ba2f7",
+  "fixture_binary_sha256": "a44a1a6769bc287565df77c3cb97c77d987322ec1f60eaa8fddc64d52cb5634f",
+  "go": "go version go1.27.1 darwin/arm64",
+  "gocache_tag": "lib/v4.4.0",
+  "gocache_commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+  "redis_store_module": "github.com/eko/gocache/store/redis/v4@v4.2.12-0.20260908213858-515e65d2cd17",
+  "go_redis": "v9.13.0",
+  "source_verification": "All 31 lib and 4 Redis-store Go source files match the exact tag archive; go mod verify passed; no replace directive.",
+  "source_sha256": {
+    "lib/cache/loadable.go": "de5dd60a5e2312806cc230ea47dd44a8b051547fdadb309d0cae6b0aca8c6eef",
+    "lib/cache/cache.go": "fec80c3b0138f7a99cb799286bc9991b7bd01b9b2b9fa0162650208ddd6c0208",
+    "lib/codec/codec.go": "9575ebf8fdcafb24e13bed3a2e54bc50daf78bde16283882947492fcb0d48610",
+    "store/redis/redis.go": "d4c30e861b553fbadc17cd02e7606a030745fd0910549c32d559b57fb400bc74"
+  },
+  "servers": {
+    "redis": {
+      "version": "Redis server v=8.10.2 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=733afb4c18605b55",
+      "image": "redis:8.10.2-alpine",
+      "digest": "redis@sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0"
+    },
+    "valkey": {
+      "version": "Valkey server v=9.1.2 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=5033ebd7516d4c1b",
+      "image": "valkey/valkey:9.1.2-alpine",
+      "digest": "valkey/valkey@sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11"
+    }
+  },
+  "method": "One disposable server per backend; independent CLI and fixture process, pool, temporary cache and authoritative store per run; prepare invokes LoadableCache.Delete. No retries of outcomes.",
+  "privacy": "CLI reports unedited; app traces record event names, local sequence numbers, monotonic timings, request and operation IDs, command names and success/miss/error only.",
+  "first_plain_doctor": "PASS; before race or baseline observer extensions",
+  "baseline_observer": "External sequential preflight only. Polls upstream read-only GET until V1 published, confirms an actual Redis cache hit through application, then invokes ordinary PUT V2 and confirms deletion. Race probes point directly at the application.",
+  "checks": [
+    "go mod verify (fixture): PASS",
+    "go vet ./... (fixture): PASS",
+    "go test ./... (core): PASS; real-server tests skip without REDIS_TEST_ADDR",
+    "git diff --exit-code v0.2.0 -- cmd internal go.mod: PASS"
+  ]
+}

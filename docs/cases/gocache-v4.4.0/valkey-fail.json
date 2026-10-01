@@ -1,0 +1,116 @@
+{
+  "tool_version": "0.2.0",
+  "scenario": "stale_fill_after_invalidation",
+  "outcome": "FAIL",
+  "fill_mode": "string",
+  "key_sha256": "675476857ff77cb09e595cd809218651d21d91411b422d91d00fc6596ea0ab6c",
+  "events": [
+    {
+      "state": "BASELINE",
+      "seq": 1,
+      "event": "baseline_started",
+      "elapsed_ms": 1
+    },
+    {
+      "state": "BASELINE",
+      "seq": 2,
+      "event": "baseline_completed",
+      "elapsed_ms": 10
+    },
+    {
+      "state": "PREPARED",
+      "seq": 3,
+      "event": "prepared",
+      "elapsed_ms": 11
+    },
+    {
+      "state": "READ_STARTED",
+      "seq": 4,
+      "event": "read_started",
+      "elapsed_ms": 11
+    },
+    {
+      "state": "CACHE_MISS_OBSERVED",
+      "seq": 5,
+      "event": "cache_miss_observed",
+      "elapsed_ms": 11,
+      "command": "GET"
+    },
+    {
+      "state": "STALE_SET_HELD",
+      "seq": 6,
+      "event": "stale_set_held",
+      "elapsed_ms": 11,
+      "command": "SET"
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 7,
+      "event": "write_started",
+      "elapsed_ms": 11
+    },
+    {
+      "state": "WRITE_STARTED",
+      "seq": 8,
+      "event": "invalidation_applied",
+      "elapsed_ms": 12,
+      "command": "DEL"
+    },
+    {
+      "state": "WRITE_AND_INVALIDATION_COMPLETED",
+      "seq": 9,
+      "event": "write_completed",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "AUTHORITATIVE_CONFIRMED",
+      "seq": 10,
+      "event": "authoritative_confirmed",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "STALE_SET_RELEASED",
+      "seq": 11,
+      "event": "stale_set_released",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "STALE_SET_COMPLETED",
+      "seq": 12,
+      "event": "stale_set_completed",
+      "elapsed_ms": 12,
+      "command": "SET"
+    },
+    {
+      "state": "READ_COMPLETED",
+      "seq": 13,
+      "event": "read_completed",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "VERIFY",
+      "seq": 14,
+      "event": "verify_started",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "FAIL",
+      "seq": 15,
+      "event": "verification_stale",
+      "elapsed_ms": 13
+    }
+  ],
+  "findings": [
+    {
+      "id": "SF001",
+      "message": "stale cache resurrection"
+    }
+  ],
+  "duration_ms": 13,
+  "environment": {
+    "arch": "arm64",
+    "go": "go1.27.1",
+    "os": "darwin",
+    "protocol": "RESP2 / non-streaming RESP3"
+  }
+}

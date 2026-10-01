@@ -1,0 +1,28 @@
+{
+  "tool_version": "0.2.0",
+  "scenario": "stale_fill_after_invalidation",
+  "outcome": "PASS",
+  "key_sha256": "675476857ff77cb09e595cd809218651d21d91411b422d91d00fc6596ea0ab6c",
+  "events": [
+    {
+      "state": "BASELINE",
+      "seq": 1,
+      "event": "baseline_started",
+      "elapsed_ms": 6
+    },
+    {
+      "state": "BASELINE",
+      "seq": 2,
+      "event": "baseline_completed",
+      "elapsed_ms": 13
+    }
+  ],
+  "findings": [],
+  "duration_ms": 13,
+  "environment": {
+    "arch": "arm64",
+    "go": "go1.27.1",
+    "os": "darwin",
+    "protocol": "RESP2 / non-streaming RESP3"
+  }
+}

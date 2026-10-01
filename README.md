@@ -87,6 +87,7 @@ The application must accept HTTP requests without requiring Redis during startup
 - [Commands and results](docs/results.md): CLI options, exit codes, findings and diagnostic traces.
 - [Architecture and supported behavior](docs/architecture.md): scheduling, transaction handling, protocol support and limits.
 - [Client compatibility](docs/client-compatibility.md): tested Redis clients and reproducible validation.
+- [gocache case study](docs/cases/gocache-v4.4.0.md): external validation of asynchronous fills with unchanged v0.2.0.
 - [Tool comparison](docs/comparison.md): how controlled command ordering differs from other testing approaches.
 - [Contributing](CONTRIBUTING.md): source setup, checks and release packaging.
 - [Changelog](CHANGELOG.md): versioned changes.

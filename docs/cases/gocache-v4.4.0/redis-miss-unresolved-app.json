@@ -1,0 +1,240 @@
+[
+  {
+    "seq": 1,
+    "elapsed_us": 31879,
+    "event": "authoritative_changed",
+    "request": 1
+  },
+  {
+    "seq": 2,
+    "elapsed_us": 31892,
+    "event": "redis_started",
+    "request": 1,
+    "command": "del"
+  },
+  {
+    "seq": 3,
+    "elapsed_us": 35633,
+    "event": "redis_completed",
+    "request": 1,
+    "command": "del",
+    "operation": 2,
+    "result": "ok"
+  },
+  {
+    "seq": 4,
+    "elapsed_us": 35635,
+    "event": "loadable_delete_returned",
+    "request": 1
+  },
+  {
+    "seq": 5,
+    "elapsed_us": 35844,
+    "event": "http_get_started",
+    "request": 2
+  },
+  {
+    "seq": 6,
+    "elapsed_us": 35850,
+    "event": "redis_started",
+    "request": 2,
+    "command": "get"
+  },
+  {
+    "seq": 7,
+    "elapsed_us": 36503,
+    "event": "redis_completed",
+    "request": 2,
+    "command": "get",
+    "operation": 6,
+    "result": "miss"
+  },
+  {
+    "seq": 8,
+    "elapsed_us": 36504,
+    "event": "loader_completed",
+    "request": 2
+  },
+  {
+    "seq": 9,
+    "elapsed_us": 36512,
+    "event": "loadable_get_returned",
+    "request": 2
+  },
+  {
+    "seq": 10,
+    "elapsed_us": 36521,
+    "event": "http_get_handler_returned",
+    "request": 2
+  },
+  {
+    "seq": 11,
+    "elapsed_us": 36583,
+    "event": "redis_started",
+    "command": "set"
+  },
+  {
+    "seq": 12,
+    "elapsed_us": 36710,
+    "event": "authoritative_changed",
+    "request": 3
+  },
+  {
+    "seq": 13,
+    "elapsed_us": 36711,
+    "event": "redis_started",
+    "request": 3,
+    "command": "del"
+  },
+  {
+    "seq": 14,
+    "elapsed_us": 37753,
+    "event": "redis_completed",
+    "command": "set",
+    "operation": 11,
+    "result": "ok"
+  },
+  {
+    "seq": 15,
+    "elapsed_us": 39736,
+    "event": "redis_completed",
+    "request": 3,
+    "command": "del",
+    "operation": 13,
+    "result": "ok"
+  },
+  {
+    "seq": 16,
+    "elapsed_us": 39737,
+    "event": "loadable_delete_returned",
+    "request": 3
+  },
+  {
+    "seq": 17,
+    "elapsed_us": 40086,
+    "event": "http_get_started",
+    "request": 4
+  },
+  {
+    "seq": 18,
+    "elapsed_us": 40088,
+    "event": "redis_started",
+    "request": 4,
+    "command": "get"
+  },
+  {
+    "seq": 19,
+    "elapsed_us": 40694,
+    "event": "redis_completed",
+    "request": 4,
+    "command": "get",
+    "operation": 18,
+    "result": "miss"
+  },
+  {
+    "seq": 20,
+    "elapsed_us": 40694,
+    "event": "loader_completed",
+    "request": 4
+  },
+  {
+    "seq": 21,
+    "elapsed_us": 40698,
+    "event": "loadable_get_returned",
+    "request": 4
+  },
+  {
+    "seq": 22,
+    "elapsed_us": 40702,
+    "event": "http_get_handler_returned",
+    "request": 4
+  },
+  {
+    "seq": 23,
+    "elapsed_us": 40726,
+    "event": "redis_started",
+    "command": "set"
+  },
+  {
+    "seq": 24,
+    "elapsed_us": 40937,
+    "event": "authoritative_changed",
+    "request": 5
+  },
+  {
+    "seq": 25,
+    "elapsed_us": 40939,
+    "event": "redis_started",
+    "request": 5,
+    "command": "del"
+  },
+  {
+    "seq": 26,
+    "elapsed_us": 41404,
+    "event": "redis_completed",
+    "command": "set",
+    "operation": 23,
+    "result": "ok"
+  },
+  {
+    "seq": 27,
+    "elapsed_us": 41555,
+    "event": "redis_completed",
+    "request": 5,
+    "command": "del",
+    "operation": 25,
+    "result": "ok"
+  },
+  {
+    "seq": 28,
+    "elapsed_us": 41556,
+    "event": "loadable_delete_returned",
+    "request": 5
+  },
+  {
+    "seq": 29,
+    "elapsed_us": 41762,
+    "event": "http_get_started",
+    "request": 6
+  },
+  {
+    "seq": 30,
+    "elapsed_us": 41763,
+    "event": "redis_started",
+    "request": 6,
+    "command": "get"
+  },
+  {
+    "seq": 31,
+    "elapsed_us": 42332,
+    "event": "redis_completed",
+    "request": 6,
+    "command": "get",
+    "operation": 30,
+    "result": "miss"
+  },
+  {
+    "seq": 32,
+    "elapsed_us": 42333,
+    "event": "loader_completed",
+    "request": 6
+  },
+  {
+    "seq": 33,
+    "elapsed_us": 42337,
+    "event": "loadable_get_returned",
+    "request": 6
+  },
+  {
+    "seq": 34,
+    "elapsed_us": 42342,
+    "event": "http_get_handler_returned",
+    "request": 6
+  },
+  {
+    "seq": 35,
+    "elapsed_us": 42360,
+    "event": "redis_started",
+    "command": "set"
+  }
+]

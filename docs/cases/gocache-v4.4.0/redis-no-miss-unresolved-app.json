@@ -1,0 +1,228 @@
+[
+  {
+    "seq": 1,
+    "elapsed_us": 24566,
+    "event": "authoritative_changed",
+    "request": 1
+  },
+  {
+    "seq": 2,
+    "elapsed_us": 24579,
+    "event": "redis_started",
+    "request": 1,
+    "command": "del"
+  },
+  {
+    "seq": 3,
+    "elapsed_us": 28117,
+    "event": "redis_completed",
+    "request": 1,
+    "command": "del",
+    "operation": 2,
+    "result": "ok"
+  },
+  {
+    "seq": 4,
+    "elapsed_us": 28119,
+    "event": "loadable_delete_returned",
+    "request": 1
+  },
+  {
+    "seq": 5,
+    "elapsed_us": 28431,
+    "event": "http_get_started",
+    "request": 2
+  },
+  {
+    "seq": 6,
+    "elapsed_us": 28441,
+    "event": "redis_started",
+    "request": 2,
+    "command": "get"
+  },
+  {
+    "seq": 7,
+    "elapsed_us": 29121,
+    "event": "redis_completed",
+    "request": 2,
+    "command": "get",
+    "operation": 6,
+    "result": "miss"
+  },
+  {
+    "seq": 8,
+    "elapsed_us": 29122,
+    "event": "loader_completed",
+    "request": 2
+  },
+  {
+    "seq": 9,
+    "elapsed_us": 29128,
+    "event": "loadable_get_returned",
+    "request": 2
+  },
+  {
+    "seq": 10,
+    "elapsed_us": 29145,
+    "event": "http_get_handler_returned",
+    "request": 2
+  },
+  {
+    "seq": 11,
+    "elapsed_us": 29163,
+    "event": "redis_started",
+    "command": "set"
+  },
+  {
+    "seq": 12,
+    "elapsed_us": 29410,
+    "event": "authoritative_changed",
+    "request": 3
+  },
+  {
+    "seq": 13,
+    "elapsed_us": 29415,
+    "event": "redis_started",
+    "request": 3,
+    "command": "del"
+  },
+  {
+    "seq": 14,
+    "elapsed_us": 29822,
+    "event": "redis_completed",
+    "command": "set",
+    "operation": 11,
+    "result": "ok"
+  },
+  {
+    "seq": 15,
+    "elapsed_us": 32992,
+    "event": "redis_completed",
+    "request": 3,
+    "command": "del",
+    "operation": 13,
+    "result": "ok"
+  },
+  {
+    "seq": 16,
+    "elapsed_us": 32992,
+    "event": "loadable_delete_returned",
+    "request": 3
+  },
+  {
+    "seq": 17,
+    "elapsed_us": 33397,
+    "event": "http_get_started",
+    "request": 4
+  },
+  {
+    "seq": 18,
+    "elapsed_us": 33399,
+    "event": "redis_started",
+    "request": 4,
+    "command": "get"
+  },
+  {
+    "seq": 19,
+    "elapsed_us": 34021,
+    "event": "redis_completed",
+    "request": 4,
+    "command": "get",
+    "operation": 18,
+    "result": "miss"
+  },
+  {
+    "seq": 20,
+    "elapsed_us": 34022,
+    "event": "loader_completed",
+    "request": 4
+  },
+  {
+    "seq": 21,
+    "elapsed_us": 34026,
+    "event": "loadable_get_returned",
+    "request": 4
+  },
+  {
+    "seq": 22,
+    "elapsed_us": 34031,
+    "event": "http_get_handler_returned",
+    "request": 4
+  },
+  {
+    "seq": 23,
+    "elapsed_us": 34052,
+    "event": "redis_started",
+    "command": "set"
+  },
+  {
+    "seq": 24,
+    "elapsed_us": 34191,
+    "event": "authoritative_changed",
+    "request": 5
+  },
+  {
+    "seq": 25,
+    "elapsed_us": 34192,
+    "event": "redis_started",
+    "request": 5,
+    "command": "del"
+  },
+  {
+    "seq": 26,
+    "elapsed_us": 34794,
+    "event": "redis_completed",
+    "request": 5,
+    "command": "del",
+    "operation": 25,
+    "result": "ok"
+  },
+  {
+    "seq": 27,
+    "elapsed_us": 34794,
+    "event": "loadable_delete_returned",
+    "request": 5
+  },
+  {
+    "seq": 28,
+    "elapsed_us": 34796,
+    "event": "redis_completed",
+    "command": "set",
+    "operation": 23,
+    "result": "ok"
+  },
+  {
+    "seq": 29,
+    "elapsed_us": 35931,
+    "event": "http_get_started",
+    "request": 6
+  },
+  {
+    "seq": 30,
+    "elapsed_us": 35933,
+    "event": "redis_started",
+    "request": 6,
+    "command": "get"
+  },
+  {
+    "seq": 31,
+    "elapsed_us": 36454,
+    "event": "redis_completed",
+    "request": 6,
+    "command": "get",
+    "operation": 30,
+    "result": "ok"
+  },
+  {
+    "seq": 32,
+    "elapsed_us": 36456,
+    "event": "loadable_get_returned",
+    "request": 6
+  },
+  {
+    "seq": 33,
+    "elapsed_us": 36462,
+    "event": "http_get_handler_returned",
+    "request": 6
+  }
+]

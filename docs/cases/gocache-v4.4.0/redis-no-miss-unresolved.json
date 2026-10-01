@@ -1,0 +1,45 @@
+{
+  "tool_version": "0.2.0",
+  "scenario": "stale_fill_after_invalidation",
+  "outcome": "UNRESOLVED",
+  "key_sha256": "675476857ff77cb09e595cd809218651d21d91411b422d91d00fc6596ea0ab6c",
+  "events": [
+    {
+      "state": "BASELINE",
+      "seq": 1,
+      "event": "baseline_started",
+      "elapsed_ms": 2
+    },
+    {
+      "state": "BASELINE",
+      "seq": 2,
+      "event": "baseline_completed",
+      "elapsed_ms": 12
+    },
+    {
+      "state": "PREPARED",
+      "seq": 3,
+      "event": "prepared",
+      "elapsed_ms": 13
+    },
+    {
+      "state": "READ_STARTED",
+      "seq": 4,
+      "event": "read_started",
+      "elapsed_ms": 13
+    }
+  ],
+  "findings": [
+    {
+      "id": "SF005",
+      "message": "expected schedule did not complete"
+    }
+  ],
+  "duration_ms": 15,
+  "environment": {
+    "arch": "arm64",
+    "go": "go1.27.1",
+    "os": "darwin",
+    "protocol": "RESP2 / non-streaming RESP3"
+  }
+}
