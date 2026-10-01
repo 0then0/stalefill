@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 (unreleased)
+## 0.3.0
 
 [Release notes](docs/releases/v0.3.0.md).
 
