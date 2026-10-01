@@ -121,11 +121,13 @@ func findingMessage(id string) string {
 	case "SF005":
 		return "expected schedule did not complete"
 	case "SF006":
-		return "opaque command, multiple fills, multiple selected keys, same-connection invalidation or unsupported protocol mode"
+		return "opaque command, multiple selected keys, same-connection invalidation or unsupported protocol mode"
 	case "SF007":
 		return "final observation differs from both configured old and new states"
 	case "SF008":
 		return "cache publication discarded, rejected or aborted"
+	case "SF009":
+		return "publication attribution ambiguous: competing candidates or misses, pending prior publication, incompatible ordering/shape or missing old reader observation"
 	case "SF100":
 		return "infrastructure or baseline error"
 	}

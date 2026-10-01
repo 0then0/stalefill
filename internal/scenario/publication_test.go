@@ -249,7 +249,11 @@ func TestDuplicateEXECAndSameConnectionInvalidation(t *testing.T) {
 			s.Queued(wire("DEL", "x"))
 		}
 		_, p, _ := s.Snapshot()
-		if p != "SF006" {
+		want := "SF006"
+		if duplicate {
+			want = "SF009"
+		}
+		if p != want {
 			t.Fatal(p)
 		}
 	}

@@ -26,9 +26,12 @@ A reader misses the cache and reads authoritative version V1. Before its old fil
 Reader: cache miss → read V1 → cache fill held
 Writer: write V2 → invalidate cache → HTTP write completes
         independent authoritative endpoint confirms V2
-Reader: old fill released → read completes
+Fill:   old publication released → publication completes
+Read:   HTTP response may complete before or after publication
 Verify: cache-backed HTTP read returns V1 (FAIL) or V2 (PASS)
 ```
+
+Detached background fills can outlive the initiating HTTP response. Association uses one confirmed miss and one compatible publication in an isolated fixture, within the existing scenario timeout. Conflicting evidence remains UNRESOLVED.
 
 Supported fills include GET/MGET with SET/SETEX/PSETEX, hash reads with HSET, and single-key hash transactions held at EXEC. Negative-cache scenarios check whether an old “missing” result survives creation of the record. See [architecture and supported behavior](docs/architecture.md) for exact command patterns and protocol limits.
 
@@ -87,7 +90,8 @@ The application must accept HTTP requests without requiring Redis during startup
 - [Commands and results](docs/results.md): CLI options, exit codes, findings and diagnostic traces.
 - [Architecture and supported behavior](docs/architecture.md): scheduling, transaction handling, protocol support and limits.
 - [Client compatibility](docs/client-compatibility.md): tested Redis clients and reproducible validation.
-- [gocache case study](docs/cases/gocache-v4.4.0.md): external validation of asynchronous fills with unchanged v0.2.0.
+- [gocache v0.2 case study](docs/cases/gocache-v4.4.0.md): original external validation and scheduling limitations.
+- [gocache v0.3 validation](docs/cases/gocache-v4.4.0-v0.3.md): detached publication scheduling against the same unmodified dependency.
 - [Tool comparison](docs/comparison.md): how controlled command ordering differs from other testing approaches.
 - [Contributing](CONTRIBUTING.md): source setup, checks and release packaging.
 - [Changelog](CHANGELOG.md): versioned changes.

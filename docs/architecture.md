@@ -4,7 +4,7 @@ StaleFill combines a Redis/Valkey TCP proxy, an HTTP probe runner, an event sche
 
 ## Execution model
 
-Before the race, the runner performs `prepare → read → write → authoritative → verify` sequentially. It checks HTTP assertions and observes the selected key's read, fill and invalidation through the proxy. A failed baseline prevents the race from starting.
+Before the race, the runner performs `prepare → read → write → authoritative → verify` sequentially. It checks HTTP assertions and observes the selected key's read, fill and invalidation through the proxy. After each baseline read/verify, it joins any observed miss with its successful upstream publication reply before moving on. This includes the final verification fill before the next prepare. An explicit `read/verify.cache_publication: "none"` fixture contract closes a baseline miss without a fill; an observed conflicting publication is SF009. This supports negative-only caching without inferring quiescence from HTTP completion. A missing expected publication expires as UNRESOLVED SF005; conflicting association evidence is SF009. A failed HTTP baseline prevents the race from starting.
 
 After preparing the fixture again, the runner starts the reader. A cache miss enables interception of the subsequent old fill. With that fill held, it starts the writer and waits for all three release conditions:
 
@@ -12,9 +12,21 @@ After preparing the fixture again, the runner starts the reader. A cache miss en
 - The HTTP write has completed successfully.
 - The independent authoritative probe confirms the new state.
 
-The proxy then forwards the held fill. Once publication and the reader complete, the final cache-backed HTTP probe checks the configured observation. Transitions depend on observed events, not sleeps. Timeouts bound the invocation.
+The proxy then forwards the held fill. The reader may complete before the fill is held, while it is held, or after release. Its result is retained and consumed once. Once publication and the reader complete, the final cache-backed HTTP probe checks the configured observation. Transitions depend on observed events, not sleeps. Timeouts bound the invocation.
 
 Each application connection has its own upstream connection, preserving authentication and selected database. Holding a fill on one connection allows the writer to proceed on another. Cancellation closes probes, sockets and the listener; a canceled held fill is not forwarded during cleanup.
+
+## Miss episodes and detached publication
+
+Read operation, miss/load episode and cache publication have independent lifetimes. A `MissEpisode` records a confirmed miss for one concrete key, string/hash read family, miss connection, publication command identity and completion flags. The proxy assigns a per-connection command sequence so a previously queued publication cannot acquire attribution merely by reaching the forwarding worker later. Transactions must start after the episode's miss, not just reach EXEC after it.
+
+A successful early HTTP reader must match the configured old status/value. Its completion is recorded when the HTTP probe reads/parses the response, independently of runner consumption. It does not end the association window or change a held barrier's scheduling state. Early transport/status failures stop scheduling; an unexpected early value is SF009. A protected synchronous reader can still refresh after release.
+
+Association uses the exact selected key, preceding confirmed miss, compatible publication shape, command ordering and a single uncontested candidate. A different pooled connection is allowed. Events include numeric `miss_episode`, `miss_connection` and `fill_connection` metadata; these identifiers are local to the invocation and contain no payloads. Competing target reads/misses before the hold, multiple publication boundaries or a publication without a compatible episode produce UNRESOLVED SF009, with a specific event reason. After the hold, writer cache lookups do not enroll in the reader episode, while additional publications still produce SF009. Reader HTTP errors following a known scheduler refusal preserve its finding; independently observed Redis errors remain SF100. Unsupported commands remain SF006; rejected/discarded EXEC remains SF008.
+
+The existing `scenario.timeout` bounds baseline joins and detached association together with the rest of the invocation. Completion never renews the deadline. Absence of a publication remains UNRESOLVED SF005 at timeout, never PASS. A completed reader without a preceding confirmed target miss is SF005 immediately: a later unrelated miss cannot acquire its episode. No polling sleep or additional timeout setting is used.
+
+This model requires an isolated target with one publication producer per modeled miss. Joining the observed baseline publications closes their modeled lifetime before prepare; it does not prove that an arbitrary application has no hidden worker or future retry. A lone unrelated write with the same key/shape/order is indistinguishable without application causality metadata. Do not use such traffic as an attributed fixture. The proxy detects observed conflicts conservatively and never inspects cache values to infer ownership.
 
 ## Supported cache fills
 

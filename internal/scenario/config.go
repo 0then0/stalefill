@@ -21,12 +21,13 @@ type Assertion struct {
 	Equals json.RawMessage `json:"equals"`
 }
 type Probe struct {
-	Method  string            `json:"method"`
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers,omitempty"`
-	JSON    json.RawMessage   `json:"json,omitempty"`
-	Status  int               `json:"status"`
-	Assert  *Assertion        `json:"assert,omitempty"`
+	CachePublication string            `json:"cache_publication,omitempty"`
+	Method           string            `json:"method"`
+	URL              string            `json:"url"`
+	Headers          map[string]string `json:"headers,omitempty"`
+	JSON             json.RawMessage   `json:"json,omitempty"`
+	Status           int               `json:"status"`
+	Assert           *Assertion        `json:"assert,omitempty"`
 }
 type Config struct {
 	Version int `json:"version"`
@@ -122,7 +123,10 @@ func (c Config) Validate() error {
 	if e != nil || t <= 0 || t > 5*time.Minute {
 		return errors.New("scenario timeout must be >0 and <=5m")
 	}
-	for _, p := range []Probe{c.Prepare, c.Read, c.Write, c.Authoritative, c.Verify} {
+	for i, p := range []Probe{c.Prepare, c.Read, c.Write, c.Authoritative, c.Verify} {
+		if p.CachePublication != "" && (p.CachePublication != "none" || (i != 1 && i != 4)) {
+			return errors.New("cache_publication must be none and only applies to read or verify baseline probes")
+		}
 		u, e := url.Parse(p.URL)
 		if e != nil || u.Host == "" || (u.Scheme != "http" && u.Scheme != "https") || u.User != nil {
 			return errors.New("probe requires an HTTP(S) URL without userinfo")

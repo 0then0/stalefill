@@ -18,6 +18,7 @@ import (
 
 type Command struct {
 	Connection    uint64
+	Sequence      uint64 // Wire order on this connection; internal attribution metadata.
 	Name          string
 	Args          [][]byte
 	Frame         resp.Frame
@@ -130,6 +131,7 @@ func (s *Server) serve(client net.Conn) {
 		defer close(queue)
 		r := bufio.NewReader(client)
 		var tracker transactionTracker
+		var sequence uint64
 		for {
 			f, err := resp.Read(r)
 			if err != nil {
@@ -148,7 +150,8 @@ func (s *Server) serve(client net.Conn) {
 				cancel()
 				return
 			}
-			c := Command{Name: name, Args: args, Frame: f, Connection: id}
+			sequence++
+			c := Command{Name: name, Args: args, Frame: f, Connection: id, Sequence: sequence}
 			tracker.annotate(&c)
 			s.hooks.Queued(c)
 			select {

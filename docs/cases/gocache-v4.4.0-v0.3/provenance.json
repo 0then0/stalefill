@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-01",
+  "status": "local uncommitted v0.3 development build; no release tag",
+  "base_commit": "75e97a98b5ca611e9719ef102e4ca570c5412756",
+  "version": "0.3.0",
+  "go": "go version go1.27.1 darwin/arm64",
+  "host": "macOS arm64",
+  "resp": 2,
+  "dependency": "github.com/eko/gocache/lib/v4 v4.4.0",
+  "fixture_unchanged": true,
+  "binary_sha256": "03f4056ed07f7b9d1e174099a8f28388a02087ea2ed0b609d57eb4a21bd71ccd",
+  "fixture_sha256": "992ae317a9f6c3f141a9f331cecadb1214f4cad20857daabaaed5ae77060f21b",
+  "core_source_sha256": "17308c724b6684faf987084da96facc4260ba4c7c74261575cfbe9bf0476a508",
+  "source_digest_format": "sorted cmd/internal Go files and go.mod; relative path NUL bytes NUL",
+  "validation": {
+    "redis": {
+      "counts": {
+        "PASS": 0,
+        "FAIL": 24,
+        "UNRESOLVED": 0,
+        "INFRASTRUCTURE_ERROR": 0
+      },
+      "reader_before_held": 10,
+      "reader_before_release": 24,
+      "representative_run": "run-02"
+    },
+    "valkey": {
+      "counts": {
+        "PASS": 0,
+        "FAIL": 4,
+        "UNRESOLVED": 0,
+        "INFRASTRUCTURE_ERROR": 0
+      },
+      "reader_before_held": 2,
+      "reader_before_release": 4,
+      "representative_run": "run-03"
+    }
+  },
+  "redis": {
+    "image_id": "sha256:3811787313eba226a2ef38658c6ccb91cd5e110edc89c37767de373120a0e5a0",
+    "image": "redis:8.10.2-alpine",
+    "version": "Redis server v=8.10.2 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=733afb4c18605b55",
+    "persistence": false
+  },
+  "valkey": {
+    "image_id": "sha256:48332870af354a799964c0012ae1194a0bf2bf894eb508f945810596dc2d8d11",
+    "image": "valkey/valkey:9.1.2-alpine",
+    "version": "Valkey server v=9.1.2 sha=00000000:1 malloc=jemalloc-5.3.0 bits=64 build=5033ebd7516d4c1b",
+    "persistence": false
+  }
+}

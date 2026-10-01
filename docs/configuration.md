@@ -23,13 +23,13 @@ Use [`examples/stalefill.json`](../examples/stalefill.json), or generate it with
 
 - `scenario.key` selects an exact key. Alternatively use an anchored Go RE2 `key_regex` of at most 512 bytes. A schedule matching multiple concrete keys is UNRESOLVED.
 - `scenario.type` is `stale_fill_after_invalidation` for old data returning after an update, or `negative_cache_resurrection` for an old missing-record observation returning after creation.
-- `scenario.timeout` is a Go duration such as `10s`. It must be greater than zero and at most `5m`; it bounds the entire invocation, including baseline.
+- `scenario.timeout` is a Go duration such as `10s`. It must be greater than zero and at most `5m`; it bounds the entire invocation, including baseline publication joins and the detached fill association window. An early reader completion does not restart this deadline.
 
 ## HTTP probes
 
 - `prepare` restores the old authoritative state and invalidates the target through the application. It runs before baseline and again before the race. StaleFill never creates Redis mutations itself.
 - `write` changes the authoritative state and invalidates the selected cache key through the application. Its successful HTTP response must complete before the held fill is released.
-- `read.assert` describes the old baseline API observation; `verify.assert` describes the new one. A protected in-flight read may refresh its response before it finishes. Their `json_path` must match, and their expected values must differ.
+- `read.assert` describes the old baseline API observation; `verify.assert` describes the new one. A reader that completes before publication release must match this old observation. A protected in-flight read may refresh its response after release. Their `json_path` must match, and their expected values must differ.
 - `authoritative` independently confirms the new state while the old fill is still held. Its expectation must equal `verify.assert.equals`; its path can differ. Use a real authoritative endpoint for your application's contract.
 - Every probe supports `method`, `url`, `headers`, a JSON body in `json`, and required exact `status`. Assertions support `$`, `.field`, and `[index]`. Final observations compare both status and JSON value against the configured old and new states. Transport errors, unexpected statuses, missing fields and invalid JSON never prove staleness. Numeric equality preserves large integers and treats `120` and `120.0` alike.
 
@@ -37,9 +37,11 @@ Use [`examples/stalefill.json`](../examples/stalefill.json), or generate it with
 
 `doctor` runs the sequential `prepare → read → write → authoritative → verify` baseline. It checks listener availability, Redis reachability, HTTP assertions, and target string/hash reads, fill and invalidation traffic through the proxy. It **executes the configured application writes**, but never holds a command or runs concurrent race probes. Use disposable fixtures for both commands.
 
-`test` refuses to arm the barrier when baseline is broken or target traffic is absent. Background activity on the selected key is not supported: isolate the fixture. More than one matching fill before release produces UNRESOLVED instead of choosing one arbitrarily.
+`test` refuses to arm the barrier when baseline is broken or target traffic is absent. Use an isolated target with one publication producer per miss. Background publications from the modeled reader are supported even after its HTTP response. Unrelated workers and hidden retries cannot be attributed from Redis traffic alone. Baseline miss publications must complete before the next mutation/prepare. More than one matching fill before release, or a competing target read before the hold, produces UNRESOLVED SF009 instead of choosing one arbitrarily. Missing expected baseline/detached publications expire as SF005. Target reads issued after the publication is held, such as writer cache lookups, do not open another reader episode; conflicting publications are still rejected.
 
 ## Negative caching
+
+`read.cache_publication` and `verify.cache_publication` optionally accept `"none"`. This is an explicit fixture contract that the corresponding **baseline** probe does not publish a cache entry, including after its HTTP response. Omit the field to join a miss publication as usual. Observed publications violating `"none"` produce SF009. It does not disable the required race fill. For negative-only caches, set `verify.cache_publication` to `"none"` because the newly present record is intentionally not cached. HTTP completion alone never establishes absence of a detached fill.
 
 For negative caching, use [`examples/negative.json`](../examples/negative.json). It seeds a missing record, creates it in the write probe, and asserts `$.exists == true`; stale `false` produces **SF002**. For an API that returns 404 for a missing record and 200 for an existing one, set `read.status` to 404 and `verify.status` to 200. A final 404 with the configured old JSON observation is FAIL SF002 after the complete schedule. The in-flight read may finish with either the old or new configured status.
 

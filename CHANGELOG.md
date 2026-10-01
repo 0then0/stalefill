@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.3.0 (unreleased)
+
+[Release notes](docs/releases/v0.3.0.md).
+
+- Join read, miss episode and publication lifetimes independently; retain early old HTTP observations while awaiting detached fills within `scenario.timeout`.
+- Join baseline miss publications before mutation and before race prepare, including the final baseline verification fill.
+- Associate existing string/hash/EXEC publication boundaries using concrete key, read family, wire command identity and transaction start context across pooled connections.
+- Add SF009 and reason events for competing candidates/reads/misses, incompatible publication ordering or shape, pending prior publication and unexpected early reader values.
+- Record actual reader completion and numeric episode/connection evidence without inspecting cache payloads; reject early reader errors before release.
+- Validate unmodified gocache lib/v4.4.0 on Redis 8.10.2 (24 complete FAIL SF001 schedules) and Valkey 9.1.2 (4 complete FAIL SF001 schedules). See the retained case evidence for scope and limits.
+
+Version-1 configuration gains optional `read/verify.cache_publication: "none"` for explicit baseline no-fill contracts. Publication command support is unchanged. Writer cache reads after the hold retain the selected episode; derived reader errors preserve known scheduling findings. Attribution still requires an isolated target; hidden unrelated producers cannot be identified from opaque Redis traffic alone.
+
 ## 0.2.0
 
 [Release notes](docs/releases/v0.2.0.md).

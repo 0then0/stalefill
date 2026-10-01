@@ -100,3 +100,29 @@ python3 -m unittest discover -s integration/gocache -p 'test_*.py'
 They exercise the actual baseline observer with replaced transport/process I/O,
 check required operations in a separate optimized Python process, and verify
 result retention after diagnostic failures or interrupted batches.
+
+## v0.3 detached scheduling validation
+
+The same fixture and driver can validate the local v0.3 implementation. Build
+from the current checkout, preserving the pinned dependencies and leaving the
+upstream library and application handlers unchanged:
+
+```sh
+go build -o bin/stalefill-v0.3.0 ./cmd/stalefill
+(cd integration/gocache && go build -o ../../bin/gocache-fixture .)
+python3 integration/gocache/validate.py \
+  --upstream 127.0.0.1:PORT --server 'Redis 8.10.2' \
+  --binary bin/stalefill-v0.3.0 --fixture bin/gocache-fixture \
+  --output bin/gocache-v03-redis-validation --runs 24
+```
+
+Use a new output directory and the disposable server setup above. For Valkey,
+substitute its actual port/server version and use four independent runs. The
+extended doctor preflight remains a sequential observer; race probes still use
+direct application URLs without sleeps, synchronization hooks or retries of
+outcomes. The v0.3 CLI additionally joins its own baseline miss publications
+before mutation/prepare, and retains the race reader's early old observation.
+
+The [v0.3 case study](../../docs/cases/gocache-v4.4.0-v0.3.md) records completed
+schedules and actual reader completion order. The original v0.2 case study and
+its retained artifacts remain unchanged.

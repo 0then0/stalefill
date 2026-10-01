@@ -82,7 +82,7 @@ func TestMissingDuplicateUnexpectedAndCancellation(t *testing.T) {
 		s.Queued(command("SET", "x"))
 		s.Queued(command("SETEX", "x"))
 		_, p, _ := s.Snapshot()
-		if p != "SF006" {
+		if p != "SF009" {
 			t.Fatal(p)
 		}
 	})

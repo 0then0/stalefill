@@ -35,11 +35,14 @@ const (
 )
 
 type Event struct {
-	State     Phase  `json:"state"`
-	Seq       int    `json:"seq"`
-	Event     string `json:"event"`
-	ElapsedMS int64  `json:"elapsed_ms"`
-	Command   string `json:"command,omitempty"`
+	State          Phase  `json:"state"`
+	Seq            int    `json:"seq"`
+	Event          string `json:"event"`
+	ElapsedMS      int64  `json:"elapsed_ms"`
+	Command        string `json:"command,omitempty"`
+	Episode        uint64 `json:"miss_episode,omitempty"`
+	MissConnection uint64 `json:"miss_connection,omitempty"`
+	FillConnection uint64 `json:"fill_connection,omitempty"`
 }
 type Scheduler struct {
 	phase                                             Phase
@@ -57,17 +60,29 @@ type Scheduler struct {
 	fillMode                                          string
 	seenRead, seenFill, seenInvalidation              bool
 	problem, infra                                    string
+	baseline                                          bool
+	episode                                           *MissEpisode
+	nextEpisode                                       uint64
+	candidates                                        map[commandRef]*MissEpisode
+	transactionEpisodes                               map[uint64]*MissEpisode
+	raceRead                                          commandRef
+	raceReads                                         int
+	readerCompleted                                   bool
 }
 
 func NewScheduler(key, pattern string) *Scheduler {
-	s := &Scheduler{phase: PhaseStart, start: time.Now(), key: key, changed: make(chan struct{}), release: make(chan struct{})}
+	s := &Scheduler{phase: PhaseStart, start: time.Now(), key: key, changed: make(chan struct{}), release: make(chan struct{}), candidates: make(map[commandRef]*MissEpisode), transactionEpisodes: make(map[uint64]*MissEpisode)}
 	if pattern != "" {
 		s.regex = regexp.MustCompile(pattern)
 	}
 	return s
 }
 func (s *Scheduler) eventLocked(name, command string) {
-	s.events = append(s.events, Event{State: s.phase, Seq: len(s.events) + 1, Event: name, ElapsedMS: time.Since(s.start).Milliseconds(), Command: command})
+	e := Event{State: s.phase, Seq: len(s.events) + 1, Event: name, ElapsedMS: time.Since(s.start).Milliseconds(), Command: command}
+	if s.episode != nil {
+		e.Episode, e.MissConnection, e.FillConnection = s.episode.ID, s.episode.MissConnection, s.episode.Publication.connection
+	}
+	s.events = append(s.events, e)
 	close(s.changed)
 	s.changed = make(chan struct{})
 }
@@ -76,6 +91,7 @@ func (s *Scheduler) Event(name string) {
 	defer s.mu.Unlock()
 	switch name {
 	case "baseline_started":
+		s.baseline = true
 		s.phase = PhaseBaseline
 	case "prepared":
 		s.phase = PhasePrepared
@@ -98,8 +114,6 @@ func (s *Scheduler) Event(name string) {
 		}
 		s.confirmed = true
 		s.phase = PhaseConfirmed
-	case "read_completed":
-		s.phase = PhaseReadCompleted
 	case "verify_started":
 		s.phase = PhaseVerify
 	case "verification_passed":
@@ -110,6 +124,42 @@ func (s *Scheduler) Event(name string) {
 		s.phase = Phase(Unresolved)
 	}
 	s.eventLocked(name, "")
+}
+
+// ObserveReader records actual probe completion, independently of when the
+// runner consumes its result. A failed early reader also wakes a waiting writer
+// so that no publication is released on an invalid old observation.
+func (s *Scheduler) ObserveReader(ctx context.Context, result probeResult) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.readerCompleted = true
+	if s.episode != nil {
+		s.episode.ReaderCompleted = true
+	}
+	if result.err == nil {
+		// Completion is an observation, not a scheduling phase transition.
+		if s.applied {
+			s.phase = PhaseReadCompleted
+		}
+		s.eventLocked("read_completed", "")
+	}
+	if !s.released && ctx.Err() == nil {
+		if result.err != nil || result.statusMismatch {
+			if s.problem == "" {
+				s.infra = "SF100"
+			}
+			s.eventLocked("reader_probe_failed", "")
+		} else if result.mismatch {
+			s.attributionProblemLocked("reader_old_observation_missing", "")
+		} else if !s.miss && s.problem == "" {
+			// Proxy After observes a miss before delivering its reply to the
+			// application. A miss arriving after HTTP completion cannot belong
+			// to this read, even if a later worker uses the same target key.
+			s.problem = "SF005"
+			s.phase = Phase(Unresolved)
+			s.eventLocked("reader_completed_without_target_miss", "")
+		}
+	}
 }
 func (s *Scheduler) match(key []byte) bool {
 	return s.key != "" && string(key) == s.key || s.regex != nil && s.regex.Match(key)
@@ -136,6 +186,15 @@ func (s *Scheduler) Queued(c proxy.Command) {
 		return
 	}
 	pub, unsupported := s.publication(c)
+	if c.Name == "MULTI" && !c.InTransaction {
+		s.transactionEpisodes[c.Connection] = s.episode
+	}
+	if c.Name == "EXEC" || c.Name == "DISCARD" {
+		if pub.Mode != "" && c.Sequence != 0 && !s.released && s.transactionEpisodes[c.Connection] != s.episode {
+			s.attributionProblemLocked("transaction_started_before_miss", c.Name)
+		}
+		delete(s.transactionEpisodes, c.Connection)
+	}
 	if !c.InTransaction && s.target(c) && !isRead(c.Name) && !isFill(c.Name) && !isDelete(c.Name) {
 		switch c.Name {
 		case "EXPIRE", "PEXPIRE", "TTL", "PTTL", "EXISTS", "WATCH":
@@ -145,9 +204,6 @@ func (s *Scheduler) Queued(c proxy.Command) {
 	}
 	if unsupported && c.Name != "DISCARD" {
 		s.issueLocked("SF006")
-	}
-	if !s.armed {
-		return
 	}
 	keys := s.keys(c)
 	if pub.Mode != "" {
@@ -166,6 +222,20 @@ func (s *Scheduler) Queued(c proxy.Command) {
 	if c.InTransaction && c.Name != "EXEC" {
 		return
 	}
+	if !s.armed {
+		if s.baseline && pub.Mode != "" {
+			s.candidateLocked(c, pub)
+		}
+		return
+	}
+	if !c.InTransaction && isRead(c.Name) && s.target(c) && !s.held && !s.released {
+		s.raceReads++
+		if s.raceReads == 1 {
+			s.raceRead = reference(c)
+		} else {
+			s.attributionProblemLocked("competing_target_read", c.Name)
+		}
+	}
 	if isDelete(c.Name) && s.target(c) && s.sets > 0 && !s.released && c.Connection != 0 && c.Connection == s.fillConnection {
 		s.issueLocked("SF006")
 	}
@@ -175,13 +245,22 @@ func (s *Scheduler) Queued(c proxy.Command) {
 			s.fillConnection = c.Connection
 		}
 		if s.sets > 1 {
-			s.issueLocked("SF006")
+			s.attributionProblemLocked("multiple_publication_candidates", c.Name)
+		} else if s.miss {
+			s.candidateLocked(c, pub)
 		}
 	}
 }
 func (s *Scheduler) Before(ctx context.Context, c proxy.Command) error {
 	s.mu.Lock()
 	pub, unsupported := s.publication(c)
+	if pub.Mode != "" && c.Sequence != 0 {
+		e, ok := s.candidates[reference(c)]
+		delete(s.candidates, reference(c))
+		if !s.released && (!ok || e != s.episode) {
+			s.attributionProblemLocked("publication_observed_before_miss", c.Name)
+		}
+	}
 	if unsupported && c.Name != "DISCARD" {
 		s.issueLocked("SF006")
 	}
@@ -206,6 +285,15 @@ func (s *Scheduler) Before(ctx context.Context, c proxy.Command) error {
 		s.issueLocked("SF005")
 		s.mu.Unlock()
 		return errors.New("fill without observed miss")
+	}
+	if s.episode == nil || !s.episode.accepts(pub) {
+		s.attributionProblemLocked("publication_without_matching_episode", c.Name)
+		s.mu.Unlock()
+		return errors.New("publication attribution failed")
+	}
+	if s.episode.Candidates == 0 {
+		// Direct hook callers can omit Queued; the proxy always supplies it.
+		s.candidateLocked(c, pub)
 	}
 	if !s.held {
 		s.held = true
@@ -267,16 +355,25 @@ func (s *Scheduler) After(c proxy.Command, f resp.Frame) {
 	}
 	if isRead(c.Name) {
 		s.seenRead = true
-		if s.armed && s.readMiss(c, f) && !s.miss {
-			s.miss = true
-			s.phase = PhaseMiss
-			s.eventLocked("cache_miss_observed", c.Name)
+		if s.armed && !s.held && !s.released && c.Sequence != 0 && reference(c) != s.raceRead {
+			s.attributionProblemLocked("read_observed_before_episode_window", c.Name)
+			return
+		}
+		if (s.armed && !s.held && !s.released || s.baseline && !s.armed) && s.readMiss(c, f) {
+			s.observeMissLocked(c)
 		}
 	}
 	if pub.Mode != "" {
 		s.seenFill = true
-		if s.armed && s.held && s.released && !s.applied && c.Connection == s.fillConnection {
+		if s.baseline && !s.armed && s.episode != nil && s.episode.accepts(pub) && s.episode.Publication == reference(c) {
+			s.episode.Published = true
+			s.eventLocked("baseline_publication_completed", c.Name)
+		}
+		if s.armed && s.held && s.released && !s.applied && s.episode != nil && reference(c) == s.episode.Publication {
 			s.applied = true
+			if s.episode != nil {
+				s.episode.Published = true
+			}
 			s.phase = PhaseApplied
 			if c.Name == "EXEC" {
 				s.eventLocked("fill_exec_completed", c.Name)
@@ -317,6 +414,12 @@ func (s *Scheduler) Arm() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.armed = true
+	if s.episode != nil && !s.episode.Published {
+		s.attributionProblemLocked("prior_publication_pending", "")
+		return
+	}
+	s.episode = nil
+	s.baseline = false
 	s.phase = PhaseReading
 	s.eventLocked("read_started", "")
 }

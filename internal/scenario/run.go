@@ -13,7 +13,7 @@ import (
 	"github.com/0then0/stalefill/internal/resp"
 )
 
-const Version = "0.2.0"
+const Version = "0.3.0"
 const (
 	Pass                = "PASS"
 	Fail                = "FAIL"
@@ -113,6 +113,18 @@ func Run(parent context.Context, c Config, doctor bool) (report Report) {
 			report.Set(InfrastructureError, "SF100")
 			return
 		}
+		if step.name == "read" || step.name == "verify" {
+			if step.p.CachePublication == "none" {
+				e = s.CompleteBaselineWithoutPublication()
+			} else {
+				e = s.WaitBaselinePublication(ctx)
+			}
+			if e != nil {
+				s.Event("baseline_publication_not_joined")
+				classifySchedule(parent, &report, s, "SF005")
+				return
+			}
+		}
 	}
 	_, problem, infra := s.Snapshot()
 	if infra != "" {
@@ -141,30 +153,26 @@ func Run(parent context.Context, c Config, doctor bool) (report Report) {
 	s.Event("prepared")
 	s.Arm()
 	readDone := make(chan probeResult, 1)
-	go func() { readDone <- probe(ctx, c.Read) }()
-	// Read errors must wake the barrier wait immediately, rather than hide behind
-	// an unresolved SET timeout.
-	waitCtx, stopWait := context.WithCancel(ctx)
-	heldDone := make(chan error, 1)
-	go func() { heldDone <- s.WaitHeld(waitCtx) }()
-	select {
-	case result := <-readDone:
-		stopWait()
-		<-heldDone
+	readerFinished := make(chan struct{})
+	go func() {
+		defer close(readerFinished)
+		result := probe(ctx, c.Read)
+		s.ObserveReader(ctx, result)
+		readDone <- result
+	}()
+	defer func() { cancel(); <-readerFinished }()
+	old, e := waitForPublication(ctx, s, readDone)
+	if e != nil {
 		if parent.Err() != nil {
 			report.Set(InfrastructureError, "SF100")
-		} else if (result.err != nil || result.statusMismatch) && ctx.Err() == nil {
+		} else if old != nil && (old.err != nil || old.statusMismatch) && ctx.Err() == nil {
 			classifyProbe(&report, s)
+		} else if old != nil && old.mismatch && ctx.Err() == nil {
+			classifySchedule(parent, &report, s, "SF009")
 		} else {
 			classifySchedule(parent, &report, s, "SF005")
 		}
 		return
-	case e = <-heldDone:
-		stopWait()
-		if e != nil {
-			classifySchedule(parent, &report, s, "SF005")
-			return
-		}
 	}
 	s.Event("write_started")
 	w := scheduleProbe(ctx, s, c.Write)
@@ -194,19 +202,21 @@ func Run(parent context.Context, c Config, doctor bool) (report Report) {
 		classifySchedule(parent, &report, s, "SF005")
 		return
 	}
-	select {
-	case old := <-readDone:
-		if old.err != nil || (old.statusMismatch && old.status != c.Verify.Status) {
+	if old == nil {
+		select {
+		case result := <-readDone:
+			old = &result
+		case <-ctx.Done():
 			report.Set(InfrastructureError, "SF100")
 			return
 		}
 		// A protected read may refresh its response after the delayed fill.
 		// The baseline defines the old value; final verification is the oracle.
-	case <-ctx.Done():
-		report.Set(InfrastructureError, "SF100")
-		return
+		if old.err != nil || (old.statusMismatch && old.status != c.Verify.Status) {
+			report.Set(InfrastructureError, "SF100")
+			return
+		}
 	}
-	s.Event("read_completed")
 	s.Event("verify_started")
 	v := probe(ctx, c.Verify)
 	if v.err != nil || (v.statusMismatch && v.status != c.Read.Status) {
@@ -241,6 +251,48 @@ func Run(parent context.Context, c Config, doctor bool) (report Report) {
 	}
 	return
 }
+
+// waitForPublication joins two independent lifetimes. Only a successful old
+// HTTP observation permits continued waiting after early reader completion.
+// The invocation context bounds association; the deadline is never renewed.
+func waitForPublication(ctx context.Context, s *Scheduler, readDone <-chan probeResult) (old *probeResult, err error) {
+	waitCtx, stopWait := context.WithCancel(ctx)
+	defer stopWait()
+	heldDone := make(chan error, 1)
+	go func() { heldDone <- s.WaitHeld(waitCtx) }()
+	save := func(result probeResult) error {
+		old = &result
+		if result.err != nil || result.statusMismatch || result.mismatch {
+			return errors.New("early reader observation failed")
+		}
+		return nil
+	}
+	readResults := readDone
+	for {
+		select {
+		case result := <-readResults:
+			readResults = nil
+			if err = save(result); err != nil {
+				stopWait()
+				<-heldDone
+				return
+			}
+		case err = <-heldDone:
+			if err != nil {
+				return
+			}
+			// Preserve an already completed reader regardless of select
+			// arbitration when both observations are ready.
+			select {
+			case result := <-readResults:
+				err = save(result)
+			default:
+			}
+			return
+		}
+	}
+}
+
 func classifySchedule(parent context.Context, r *Report, s *Scheduler, fallback string) {
 	if parent.Err() != nil {
 		r.Set(InfrastructureError, "SF100")

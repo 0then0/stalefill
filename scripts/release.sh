@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
-version=${1:-v0.2.0}
-if [ "$version" != "v0.2.0" ]; then
-  echo 'This release script targets the current CLI version v0.2.0' >&2
+version=${1:-v0.3.0}
+if [ "$version" != "v0.3.0" ]; then
+  echo 'This release script targets the current CLI version v0.3.0' >&2
   exit 1
 fi
 mkdir -p dist
@@ -21,6 +21,11 @@ for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64; d
   cp LICENSE README.md go.mod CONTRIBUTING.md CHANGELOG.md "$folder/"
   mkdir -p "$folder/docs/assets" "$folder/docs/traces" "$folder/docs/releases" "$folder/examples"
   cp docs/*.md "$folder/docs/"
+  cp -R docs/cases "$folder/docs/"
+  # Case studies reference fixture documentation and the scheduler source.
+  mkdir -p "$folder/integration/gocache" "$folder/internal/scenario"
+  cp integration/gocache/README.md "$folder/integration/gocache/"
+  cp internal/scenario/run.go "$folder/internal/scenario/"
   cp docs/releases/*.md "$folder/docs/releases/"
   cp docs/assets/stalefill.svg "$folder/docs/assets/"
   cp docs/traces/*.json "$folder/docs/traces/"

@@ -1,4 +1,4 @@
-"""Run the unchanged v0.2 CLI against an unmodified gocache dependency.
+"""Run a StaleFill CLI against an unmodified gocache dependency.
 
 Only the separate doctor preflight polls for async publication to verify the
 sequential baseline. Race runs use the ordinary direct HTTP probes without

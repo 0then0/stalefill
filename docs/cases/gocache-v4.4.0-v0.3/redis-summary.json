@@ -1,0 +1,511 @@
+{
+  "upstream": "eko/gocache",
+  "tag": "lib/v4.4.0",
+  "commit": "515e65d2cd170b9ba807c64f9b86ed71f6842754",
+  "server": "Redis 8.10.2",
+  "resp": 2,
+  "stalefill": "0.3.0",
+  "baseline": {
+    "redis_received_V1": true,
+    "repeated_GET_hit_Redis_without_loader": true,
+    "PUT_updated_authoritative_and_Delete_removed_entry": true,
+    "doctor_outcome": "PASS",
+    "following_GET_returned_V2": true
+  },
+  "requested_runs": 24,
+  "independent_fixture_processes": 24,
+  "counts": {
+    "PASS": 0,
+    "FAIL": 24,
+    "UNRESOLVED": 0,
+    "INFRASTRUCTURE_ERROR": 0
+  },
+  "stages": {
+    "FAIL/FAIL/verification_stale": 24
+  },
+  "diagnoses": {
+    "complete_schedule_observed_stale_verification": 24
+  },
+  "runs": [
+    {
+      "run": 1,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 20,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 22,
+      "handler_return_to_SET_attempt_us": 15,
+      "SET_attempt_to_completion_us": 8463
+    },
+    {
+      "run": 2,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 9,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 54,
+      "handler_return_to_SET_attempt_us": 12,
+      "SET_attempt_to_completion_us": 2539
+    },
+    {
+      "run": 3,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 8,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 22,
+      "handler_return_to_SET_attempt_us": 12,
+      "SET_attempt_to_completion_us": 2482
+    },
+    {
+      "run": 4,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 9,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 19,
+      "handler_return_to_SET_attempt_us": 12,
+      "SET_attempt_to_completion_us": 2282
+    },
+    {
+      "run": 5,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 9,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 74,
+      "handler_return_to_SET_attempt_us": 14,
+      "SET_attempt_to_completion_us": 2774
+    },
+    {
+      "run": 6,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 8,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 12,
+      "handler_return_to_SET_attempt_us": 7,
+      "SET_attempt_to_completion_us": 2131
+    },
+    {
+      "run": 7,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 8,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 15,
+      "handler_return_to_SET_attempt_us": 9,
+      "SET_attempt_to_completion_us": 1889
+    },
+    {
+      "run": 8,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 9,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 22,
+      "handler_return_to_SET_attempt_us": 10,
+      "SET_attempt_to_completion_us": 2442
+    },
+    {
+      "run": 9,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 8,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 14,
+      "handler_return_to_SET_attempt_us": 9,
+      "SET_attempt_to_completion_us": 2338
+    },
+    {
+      "run": 10,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 10,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 16,
+      "handler_return_to_SET_attempt_us": 10,
+      "SET_attempt_to_completion_us": 2926
+    },
+    {
+      "run": 11,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 9,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 17,
+      "handler_return_to_SET_attempt_us": 10,
+      "SET_attempt_to_completion_us": 2050
+    },
+    {
+      "run": 12,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 10,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 76,
+      "handler_return_to_SET_attempt_us": 9,
+      "SET_attempt_to_completion_us": 984
+    },
+    {
+      "run": 13,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 11,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 20,
+      "handler_return_to_SET_attempt_us": 13,
+      "SET_attempt_to_completion_us": 2585
+    },
+    {
+      "run": 14,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 10,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 18,
+      "handler_return_to_SET_attempt_us": 10,
+      "SET_attempt_to_completion_us": 2420
+    },
+    {
+      "run": 15,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 9,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 15,
+      "handler_return_to_SET_attempt_us": 10,
+      "SET_attempt_to_completion_us": 2368
+    },
+    {
+      "run": 16,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 10,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 18,
+      "handler_return_to_SET_attempt_us": 12,
+      "SET_attempt_to_completion_us": 2735
+    },
+    {
+      "run": 17,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 10,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 20,
+      "handler_return_to_SET_attempt_us": 11,
+      "SET_attempt_to_completion_us": 3141
+    },
+    {
+      "run": 18,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 11,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 21,
+      "handler_return_to_SET_attempt_us": 11,
+      "SET_attempt_to_completion_us": 2888
+    },
+    {
+      "run": 19,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 15,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 21,
+      "handler_return_to_SET_attempt_us": 14,
+      "SET_attempt_to_completion_us": 4116
+    },
+    {
+      "run": 20,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 9,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 23,
+      "handler_return_to_SET_attempt_us": 15,
+      "SET_attempt_to_completion_us": 2470
+    },
+    {
+      "run": 21,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 10,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 54,
+      "handler_return_to_SET_attempt_us": 37,
+      "SET_attempt_to_completion_us": 2469
+    },
+    {
+      "run": 22,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 10,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 17,
+      "handler_return_to_SET_attempt_us": 11,
+      "SET_attempt_to_completion_us": 2914
+    },
+    {
+      "run": 23,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 10,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 25,
+      "handler_return_to_SET_attempt_us": 13,
+      "SET_attempt_to_completion_us": 2664
+    },
+    {
+      "run": 24,
+      "outcome": "FAIL",
+      "findings": [
+        "SF001"
+      ],
+      "stage": "FAIL",
+      "last_event": "verification_stale",
+      "race_started": true,
+      "fill_held": true,
+      "write_started": true,
+      "duration_ms": 18,
+      "diagnosis": "complete_schedule_observed_stale_verification",
+      "reader_request": 6,
+      "reader_Redis_miss": true,
+      "reader_Redis_hit": false,
+      "load_to_SET_attempt_us": 15,
+      "handler_return_to_SET_attempt_us": 9,
+      "SET_attempt_to_completion_us": 2657
+    }
+  ]
+}
