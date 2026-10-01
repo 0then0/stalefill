@@ -39,6 +39,8 @@ func TestWriterMayReadCache(t *testing.T) {
 		app.ServeHTTP(w, r)
 	}))
 	defer h.Close()
+	c.Redis.Listen = freeAddress(t)
+	app.Redis = c.Redis.Listen
 	c.Prepare.URL = h.URL + "/items/42"
 	c.Read.URL = c.Prepare.URL
 	c.Verify.URL = c.Prepare.URL

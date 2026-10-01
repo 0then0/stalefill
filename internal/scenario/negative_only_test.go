@@ -22,7 +22,6 @@ func TestNegativeOnlyCaching(t *testing.T) {
 			if err := json.Unmarshal([]byte(Template), &c); err != nil {
 				t.Fatal(err)
 			}
-			c.Redis.Listen = freeAddress(t)
 			c.Redis.Upstream = testredis.Start(t)
 			c.Scenario.Type = "negative_cache_resurrection"
 			c.Scenario.Timeout = "400ms"
@@ -85,6 +84,7 @@ func TestNegativeOnlyCaching(t *testing.T) {
 				json.NewEncoder(w).Encode(map[string]bool{"exists": value})
 			}))
 			defer h.Close()
+			c.Redis.Listen = freeAddress(t)
 			c.Prepare.URL = h.URL + "/item"
 			c.Write.URL = c.Prepare.URL
 			c.Read.URL = c.Prepare.URL

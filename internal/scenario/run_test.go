@@ -35,12 +35,15 @@ func demoConfig(t *testing.T, upstream string, fixed bool, negative bool) (Confi
 	if e := json.Unmarshal([]byte(Template), &c); e != nil {
 		t.Fatal(e)
 	}
-	c.Redis.Listen = freeAddress(t)
 	c.Redis.Upstream = upstream
 	c.Scenario.Timeout = "3s"
 	app := demo.New(c.Redis.Listen, fixed)
 	h := httptest.NewServer(app)
 	t.Cleanup(h.Close)
+	// Allocate the proxy address after HTTP listeners: the OS can reuse a
+	// just-closed ephemeral port for a subsequent httptest server.
+	c.Redis.Listen = freeAddress(t)
+	app.Redis = c.Redis.Listen
 	c.Prepare.URL = h.URL + "/items/42"
 	c.Read.URL = c.Prepare.URL
 	c.Write.URL = c.Prepare.URL
@@ -170,6 +173,10 @@ func testNegativeHTTPStatuses(t *testing.T, upstream string) {
 				w.Write(rr.Body.Bytes())
 			}))
 			defer h.Close()
+			// The wrapper adds another listener after demoConfig. Select the
+			// proxy port only after both HTTP servers are listening.
+			c.Redis.Listen = freeAddress(t)
+			app.Redis = c.Redis.Listen
 			c.Prepare.URL = h.URL + "/items/42"
 			c.Read.URL = c.Prepare.URL
 			c.Write.URL = c.Prepare.URL
@@ -187,7 +194,7 @@ func testNegativeHTTPStatuses(t *testing.T, upstream string) {
 				}
 			}
 			if !completed {
-				t.Fatal("HTTP oracle tested without a complete schedule")
+				t.Fatalf("HTTP oracle tested without a complete schedule: findings=%v events=%v", r.Findings, logicalEvents(r))
 			}
 		})
 	}
@@ -261,6 +268,8 @@ func TestStatusMismatchBeforeRelease(t *testing.T) {
 				w.Write(rr.Body.Bytes())
 			}))
 			defer h.Close()
+			c.Redis.Listen = freeAddress(t)
+			app.Redis = c.Redis.Listen
 			c.Prepare.URL = h.URL + "/items/42"
 			c.Read.URL = c.Prepare.URL
 			c.Write.URL = c.Prepare.URL
@@ -296,6 +305,7 @@ func TestDoctorAndWiring(t *testing.T) {
 	app := demo.New(upstream, false)
 	h := httptest.NewServer(app)
 	defer h.Close()
+	c.Redis.Listen = freeAddress(t)
 	c.Prepare.URL = h.URL + "/items/42"
 	c.Read.URL = c.Prepare.URL
 	c.Write.URL = c.Prepare.URL
@@ -345,6 +355,8 @@ func TestUnexpectedFinalValueIsNotStaleProof(t *testing.T) {
 		app.ServeHTTP(w, r)
 	}))
 	defer h.Close()
+	c.Redis.Listen = freeAddress(t)
+	app.Redis = c.Redis.Listen
 	c.Prepare.URL = h.URL + "/items/42"
 	c.Read.URL = c.Prepare.URL
 	c.Write.URL = c.Prepare.URL
@@ -428,6 +440,8 @@ func TestMissingScheduleEvents(t *testing.T) {
 				app.ServeHTTP(w, r)
 			}))
 			defer h.Close()
+			c.Redis.Listen = freeAddress(t)
+			app.Redis = c.Redis.Listen
 			c.Prepare.URL = h.URL + "/items/42"
 			c.Read.URL = c.Prepare.URL
 			c.Write.URL = c.Prepare.URL
@@ -463,6 +477,8 @@ func TestCancellationWhileFillHeld(t *testing.T) {
 		app.ServeHTTP(w, r)
 	}))
 	defer h.Close()
+	c.Redis.Listen = freeAddress(t)
+	app.Redis = c.Redis.Listen
 	c.Prepare.URL = h.URL + "/items/42"
 	c.Read.URL = c.Prepare.URL
 	c.Write.URL = c.Prepare.URL
@@ -512,6 +528,8 @@ func TestProtectedReadCanRefreshItsResponse(t *testing.T) {
 		app.ServeHTTP(w, r)
 	}))
 	defer h.Close()
+	c.Redis.Listen = freeAddress(t)
+	app.Redis = c.Redis.Listen
 	c.Prepare.URL = h.URL + "/items/42"
 	c.Read.URL = c.Prepare.URL
 	c.Write.URL = c.Prepare.URL

@@ -25,7 +25,7 @@ func TestDetachedRunner(t *testing.T) {
 	for _, fixed := range []bool{false, true} {
 		t.Run(fmt.Sprintf("fixed=%v", fixed), func(t *testing.T) {
 			upstream := testredis.Start(t)
-			addr := freeAddress(t)
+			var addr string
 			var authoritative atomic.Int64
 			var workers sync.WaitGroup
 			query := func(args ...string) (resp.Frame, error) {
@@ -79,6 +79,7 @@ func TestDetachedRunner(t *testing.T) {
 				json.NewEncoder(w).Encode(map[string]int64{"version": value})
 			}))
 			defer func() { app.Close(); workers.Wait() }()
+			addr = freeAddress(t)
 			var c Config
 			if err := json.Unmarshal([]byte(Template), &c); err != nil {
 				t.Fatal(err)

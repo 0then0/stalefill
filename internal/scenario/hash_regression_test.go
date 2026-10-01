@@ -34,7 +34,7 @@ func TestRealOpaqueHashPublicationCannotPass(t *testing.T) {
 				const other = key + ":other"
 				testredis.Command(t, upstream, "DEL", key, other)
 				t.Cleanup(func() { testredis.Command(t, upstream, "DEL", key, other) })
-				addr := freeAddress(t)
+				var addr string
 				var authoritative atomic.Int64
 				query := func(args ...string) (resp.Frame, error) {
 					conn, err := net.DialTimeout("tcp", addr, time.Second)
@@ -92,6 +92,7 @@ func TestRealOpaqueHashPublicationCannotPass(t *testing.T) {
 					json.NewEncoder(w).Encode(map[string]int64{"version": value})
 				}))
 				defer app.Close()
+				addr = freeAddress(t)
 				var c Config
 				if err := json.Unmarshal([]byte(Template), &c); err != nil {
 					t.Fatal(err)
